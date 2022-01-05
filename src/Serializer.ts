@@ -8,9 +8,9 @@ import {
 } from "vscode";
 
 interface RawNotebookCell {
+  kind: NotebookCellKind;
   language: string;
   value: string;
-  kind: NotebookCellKind;
 }
 
 export default class Serializer implements NotebookSerializer {

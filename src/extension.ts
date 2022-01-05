@@ -6,7 +6,10 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.registerNotebookSerializer(
       "bash-notebook",
-      new Serializer()
+      new Serializer(),
+      {
+        transientOutputs: true,
+      }
     )
   );
   context.subscriptions.push(new Controller());
