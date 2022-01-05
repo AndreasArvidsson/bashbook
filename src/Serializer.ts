@@ -7,10 +7,16 @@ import {
   NotebookSerializer,
 } from "vscode";
 
+interface RawNotebook {
+  cells: RawNotebookCell[];
+  // metadata: { [key: string]: any };
+}
+
 interface RawNotebookCell {
   kind: NotebookCellKind;
-  language: string;
+  languageId: string;
   value: string;
+  // metadata: { [key: string]: any };
 }
 
 export default class Serializer implements NotebookSerializer {
@@ -20,29 +26,40 @@ export default class Serializer implements NotebookSerializer {
   ): Promise<NotebookData> {
     const contents = new TextDecoder().decode(content);
 
-    let raw: RawNotebookCell[];
+    let raw: RawNotebook;
     try {
-      raw = <RawNotebookCell[]>JSON.parse(contents);
+      raw = <RawNotebook>JSON.parse(contents);
     } catch {
-      raw = [];
+      raw = {
+        cells: [],
+        // metadata: {},
+      };
     }
 
-    const cells = raw.map(
-      (item) => new NotebookCellData(item.kind, item.value, item.language)
-    );
+    const cells = raw.cells.map((item) => {
+      const cell = new NotebookCellData(item.kind, item.value, item.languageId);
+      // cell.metadata = item.metadata;
+      return cell;
+    });
 
-    return new NotebookData(cells);
+    const notebook = new NotebookData(cells);
+    // notebook.metadata = raw.metadata;
+    return notebook;
   }
 
   async serializeNotebook(
     data: NotebookData,
     _token: CancellationToken
   ): Promise<Uint8Array> {
-    const contents: RawNotebookCell[] = data.cells.map((cell) => ({
-      kind: cell.kind,
-      language: cell.languageId,
-      value: cell.value,
-    }));
+    const contents: RawNotebook = {
+      // metadata: data.metadata ?? {},
+      cells: data.cells.map((cell) => ({
+        kind: cell.kind,
+        languageId: cell.languageId,
+        value: cell.value,
+        // metadata: cell.metadata ?? {},
+      })),
+    };
 
     return new TextEncoder().encode(JSON.stringify(contents));
   }
