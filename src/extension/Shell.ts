@@ -35,7 +35,7 @@ export const createShell = () => {
         reject(String(error));
       });
 
-      child.stdin.write(`${command} && echo ${ERROR_CODE}$?\n`);
+      child.stdin.write(`${command}; echo ${ERROR_CODE}$?\n`);
     });
   };
 

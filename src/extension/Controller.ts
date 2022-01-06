@@ -108,6 +108,7 @@ export default class Controller {
   readonly notebookType = "bash-notebook";
   readonly label = "Bash notebook";
   readonly supportedLanguages = ["shellscript"];
+  readonly mime = "x-application/bash-notebook";
 
   private readonly controller: NotebookController;
   private executionOrder = 0;
@@ -160,13 +161,17 @@ export default class Controller {
       .run(text)
       .then((result: string) => {
         execution.replaceOutput(
-          new NotebookCellOutput([NotebookCellOutputItem.text(result)])
+          new NotebookCellOutput([
+            NotebookCellOutputItem.text(result, this.mime),
+          ])
         );
         execution.end(true, Date.now());
       })
       .catch((error: string) => {
         execution.replaceOutput(
-          new NotebookCellOutput([NotebookCellOutputItem.text(error)])
+          new NotebookCellOutput([
+            NotebookCellOutputItem.text(error, this.mime),
+          ])
         );
         execution.end(false, Date.now());
       });
