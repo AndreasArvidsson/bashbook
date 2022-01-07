@@ -3,16 +3,22 @@ import { Terminal } from "xterm";
 import "xterm/css/xterm.css";
 
 export const activate: ActivationFunction = (context) => {
-  // const term = new Terminal({ convertEol: true });
-  let term: Terminal;
+  const map = new Map();
+
+  const getTerminal = (uri: string, element: HTMLElement) => {
+    if (!map.has(uri)) {
+      const term = new Terminal({});
+      term.open(element);
+      map.set(uri, term);
+    }
+    return map.get(uri);
+  };
+
   return {
-    renderOutputItem(data, element) {
-      if (term == null) {
-        term = new Terminal({});
-        term.open(element);
-      }
-      console.log(`2 "${data.text()}"`);
-      term.write(data.text());
+    renderOutputItem(outputItem, element) {
+      const { uri, data } = outputItem.json();
+      const term = getTerminal(uri, element);
+      term.write(data);
       // element.innerText = data.text();
     },
   };

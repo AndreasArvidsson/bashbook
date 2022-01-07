@@ -7,10 +7,10 @@ import {
   notebooks,
 } from "vscode";
 import { spawn } from "node-pty";
-// import { createShell } from "./Shell";
 
 const shell = "C:\\Program Files\\Git\\bin\\bash.exe"; // TODO
 // const shell = "powershell.exe";
+// const shell = "bash.exe";
 
 export default class Controller {
   readonly controllerId = "bash-notebook-controller-id";
@@ -21,6 +21,7 @@ export default class Controller {
 
   private readonly controller: NotebookController;
   private executionOrder = 0;
+  private isExecuting = false;
   private pty;
 
   constructor() {
@@ -32,7 +33,7 @@ export default class Controller {
 
     this.controller.supportedLanguages = this.supportedLanguages;
     this.controller.supportsExecutionOrder = true;
-    this.controller.executeHandler = this.execute.bind(this);
+    this.controller.executeHandler = this.executeHandler.bind(this);
 
     this.pty = spawn(shell, [], {
       name: "xterm-color",
@@ -41,13 +42,16 @@ export default class Controller {
       cwd: process.env.HOME,
       env: <{ [key: string]: string }>process.env,
     });
+
+    console.log(this.pty.process, this.pty.pid);
   }
 
   dispose() {
     this.controller.dispose();
+    this.pty.kill();
   }
 
-  private execute(
+  private executeHandler(
     cells: NotebookCell[],
     _notebook: NotebookDocument,
     _controller: NotebookController
@@ -57,41 +61,53 @@ export default class Controller {
     }
   }
 
-  // private getShell(cell: NotebookCell) {
-  //   if (!this.shells.has(cell)) {
-  //     this.shells.set(cell, createShell());
-  //   }
-  //   return this.shells.get(cell);
-  // }
-
   private async doExecution(cell: NotebookCell): Promise<void> {
+    // Can only execute one cell at the time
+    if (this.isExecuting) {
+      return;
+    }
+
     const execution = this.controller.createNotebookCellExecution(cell);
     execution.executionOrder = ++this.executionOrder;
     execution.start(Date.now());
-
-    // const output = new NotebookCellOutput([]);
     execution.clearOutput();
 
-    // const shell = this.getShell(cell);
-    const text = cell.document.getText();
-
-    this.pty.on("data", (data: any) => {
-      // process.stdout.write(data);
-      console.log(`1 "${data}"`);
-      // execution.appendOutputItems(
-      //   [NotebookCellOutputItem.text(data, this.mime)],
-      //   output
-      // );
-      // execution.replaceOutput(output);
-      execution.appendOutput(
-        new NotebookCellOutput([NotebookCellOutputItem.text(data, this.mime)])
-      );
-      // execution.end(true, Date.now());
+    execution.token.onCancellationRequested(() => {
+      execution.end(false, Date.now());
+      this.isExecuting = false;
     });
 
-    // this.pty.write("ls\r");
+    this.pty.onData((data) => {
+      // Execution is already canceled
+      if (execution.token.isCancellationRequested) {
+        return;
+      }
+
+      const json = {
+        uri: cell.document.uri.toString(),
+        data,
+      };
+
+      execution.appendOutput(
+        new NotebookCellOutput([NotebookCellOutputItem.json(json, this.mime)])
+      );
+
+      console.log(`'${data}'`);
+      // execution.end(true, Date.now());
+      // this.isExecuting = false;
+    });
+
     // this.pty.resize(100, 40);
-    // this.pty.write("ls\r");
-    this.pty.write(`${text}\r`);
+
+    const commands = cell.document.getText().split("\n");
+
+    this.isExecuting = commands.length > 0;
+    if (!this.isExecuting) {
+      execution.end(true, Date.now());
+    }
+
+    commands.forEach((command) => {
+      this.pty.write(`${command}\r`);
+    });
   }
 }
