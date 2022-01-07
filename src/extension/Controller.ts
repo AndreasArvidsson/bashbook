@@ -1,5 +1,6 @@
 import {
   NotebookCell,
+  NotebookCellExecution,
   NotebookCellOutput,
   NotebookCellOutputItem,
   NotebookController,
@@ -19,8 +20,15 @@ const notebookType = "bash-notebook";
 const label = "Bash notebook";
 const supportedLanguages = ["shellscript"];
 
+interface CommandExecution {
+  command: string;
+  execution: NotebookCellExecution;
+  uri: string;
+}
+
 export default class Controller {
   private readonly controller: NotebookController;
+  private executionQueue: CommandExecution[] = [];
   private executionOrder = 0;
   private isExecuting = false;
   private pty;
@@ -61,58 +69,97 @@ export default class Controller {
   }
 
   private async doExecution(cell: NotebookCell): Promise<void> {
-    // Can only execute one cell at the time
-    // if (this.isExecuting) {
-    //   return;
-    // }
-
     const execution = this.controller.createNotebookCellExecution(cell);
     execution.executionOrder = ++this.executionOrder;
     execution.start(Date.now());
     execution.clearOutput();
 
-    execution.token.onCancellationRequested(() => {
-      execution.end(false, Date.now());
-      this.isExecuting = false;
-    });
+    const commands = cell.document
+      .getText()
+      .split("\n")
+      .map((command) => command.trim())
+      .filter(Boolean);
 
-    this.pty.onData((data) => {
-      // Execution is already canceled
-      if (execution.token.isCancellationRequested) {
-        return;
-      }
-
-      // ➜
-
-      const json = {
-        uri: cell.document.uri.toString(),
-        data,
-      };
-
-      execution.appendOutput(
-        new NotebookCellOutput([
-          NotebookCellOutputItem.json(json, mime),
-          // NotebookCellOutputItem.text(data),
-        ])
-      );
-
-      console.log(`'${data}'`);
-      // execution.end(true, Date.now());
-      // this.isExecuting = false;
-    });
-
-    // this.pty.resize(100, 40);
-
-    const commands = cell.document.getText().split("\n");
-
-    this.isExecuting = commands.length > 0;
-    if (!this.isExecuting) {
+    if (commands.length === 0) {
       execution.end(true, Date.now());
+      this.isExecuting = false;
+      return;
     }
 
     commands.forEach((command) => {
-      this.pty.write(`${command}; echo ${errorCode}$?\r`);
-      // this.pty.write(`${command}\r`);
+      this.executionQueue.push({
+        command,
+        execution,
+        uri: cell.document.uri.toString(),
+      });
     });
+
+    execution.token.onCancellationRequested(() => {
+      execution.end(false, Date.now());
+      this.isExecuting = false;
+      // TODO kill actual process?
+      this.runExecutionQueue();
+    });
+
+    this.runExecutionQueue();
+  }
+
+  private getOutput(uri: string, data: string) {
+    console.log(data);
+    const json = { uri, data };
+
+    return new NotebookCellOutput([
+      // NotebookCellOutputItem.json(json, mime),
+      NotebookCellOutputItem.text(data),
+    ]);
+  }
+
+  private runExecutionQueue() {
+    console.log(
+      `runExecutionQueue ${this.executionQueue.length} ${this.isExecuting}`
+    );
+    if (this.executionQueue.length === 0 || this.isExecuting) {
+      return;
+    }
+
+    const { command, execution, uri } = this.executionQueue.shift()!;
+    console.log(`command ${command}`);
+    const fullCommand = `${command}; echo ${errorCode}$?`;
+    this.isExecuting = true;
+
+    const disposable = this.pty.onData((data) => {
+      // Execution is already canceled
+      if (execution.token.isCancellationRequested) {
+        disposable.dispose();
+        return;
+      }
+
+      const dataIsCommand = data === fullCommand;
+
+      if (!dataIsCommand) {
+        const errorCodeIndex = data.indexOf(errorCode);
+        if (errorCodeIndex > -1) {
+          const code = data[errorCodeIndex + errorCode.length];
+          const success = code === "0";
+          if (errorCodeIndex > 0) {
+            execution.appendOutput(
+              this.getOutput(uri, data.substring(0, errorCodeIndex))
+            );
+          }
+          execution.end(success, Date.now());
+          disposable.dispose();
+          this.isExecuting = false;
+
+          this.runExecutionQueue();
+          return;
+        }
+      }
+
+      const commandOrData = dataIsCommand ? `➜ ${command}` : data;
+
+      execution.appendOutput(this.getOutput(uri, commandOrData));
+    });
+
+    this.pty.write(`${fullCommand}\r`);
   }
 }
