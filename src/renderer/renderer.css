@@ -1,0 +1,7 @@
+.xterm-viewport {
+  background-color: var(--theme-background) !important;
+}
+
+.xterm-rows {
+  color: var(--theme-foreground) !important;
+}

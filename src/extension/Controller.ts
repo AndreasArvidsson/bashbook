@@ -90,7 +90,10 @@ export default class Controller {
       };
 
       execution.appendOutput(
-        new NotebookCellOutput([NotebookCellOutputItem.json(json, mime)])
+        new NotebookCellOutput([
+          NotebookCellOutputItem.json(json, mime),
+          // NotebookCellOutputItem.text(data),
+        ])
       );
 
       console.log(`'${data}'`);
