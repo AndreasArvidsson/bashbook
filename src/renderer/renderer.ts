@@ -22,7 +22,6 @@ export const activate: ActivationFunction = (context) => {
       const { uri, data } = outputItem.json();
       const term = getTerminal(uri, element);
       term.write(data);
-      // element.innerText = data.text();
     },
   };
 };

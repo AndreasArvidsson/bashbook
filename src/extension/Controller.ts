@@ -86,12 +86,10 @@ export default class Controller {
       return;
     }
 
-    commands.forEach((command) => {
-      this.executionQueue.push({
-        command,
-        execution,
-        uri: cell.document.uri.toString(),
-      });
+    this.executionQueue.push({
+      command: commands.join("; "),
+      execution,
+      uri: cell.document.uri.toString(),
     });
 
     execution.token.onCancellationRequested(() => {
@@ -105,27 +103,22 @@ export default class Controller {
   }
 
   private getOutput(uri: string, data: string) {
-    console.log(data);
     const json = { uri, data };
 
     return new NotebookCellOutput([
-      // NotebookCellOutputItem.json(json, mime),
-      NotebookCellOutputItem.text(data),
+      NotebookCellOutputItem.json(json, mime),
+      // NotebookCellOutputItem.text(data),
     ]);
   }
 
   private runExecutionQueue() {
-    console.log(
-      `runExecutionQueue ${this.executionQueue.length} ${this.isExecuting}`
-    );
     if (this.executionQueue.length === 0 || this.isExecuting) {
       return;
     }
 
     const { command, execution, uri } = this.executionQueue.shift()!;
-    console.log(`command ${command}`);
-    const fullCommand = `${command}; echo ${errorCode}$?`;
     this.isExecuting = true;
+    let waitingForCommand = true;
 
     const disposable = this.pty.onData((data) => {
       // Execution is already canceled
@@ -134,32 +127,32 @@ export default class Controller {
         return;
       }
 
-      const dataIsCommand = data === fullCommand;
-
-      if (!dataIsCommand) {
-        const errorCodeIndex = data.indexOf(errorCode);
-        if (errorCodeIndex > -1) {
-          const code = data[errorCodeIndex + errorCode.length];
-          const success = code === "0";
-          if (errorCodeIndex > 0) {
-            execution.appendOutput(
-              this.getOutput(uri, data.substring(0, errorCodeIndex))
-            );
-          }
-          execution.end(success, Date.now());
-          disposable.dispose();
-          this.isExecuting = false;
-
-          this.runExecutionQueue();
-          return;
-        }
+      // Don't print command
+      if (waitingForCommand) {
+        waitingForCommand = false;
+        return;
       }
 
-      const commandOrData = dataIsCommand ? `➜ ${command}` : data;
+      const errorCodeIndex = data.indexOf(errorCode);
+      if (errorCodeIndex > -1) {
+        const code = data[errorCodeIndex + errorCode.length];
+        const success = code === "0";
+        if (errorCodeIndex > 0) {
+          execution.appendOutput(
+            this.getOutput(uri, data.substring(0, errorCodeIndex))
+          );
+        }
+        execution.end(success, Date.now());
+        disposable.dispose();
+        this.isExecuting = false;
 
-      execution.appendOutput(this.getOutput(uri, commandOrData));
+        this.runExecutionQueue();
+        return;
+      }
+
+      execution.appendOutput(this.getOutput(uri, data));
     });
 
-    this.pty.write(`${fullCommand}\r`);
+    this.pty.write(`${command}; echo ${errorCode}$?\r`);
   }
 }
