@@ -12,13 +12,14 @@ const shell = "C:\\Program Files\\Git\\bin\\bash.exe"; // TODO
 // const shell = "powershell.exe";
 // const shell = "bash.exe";
 
-export default class Controller {
-  readonly controllerId = "bash-notebook-controller-id";
-  readonly notebookType = "bash-notebook";
-  readonly label = "Bash notebook";
-  readonly supportedLanguages = ["shellscript"];
-  readonly mime = "x-application/bash-notebook";
+const errorCode = "ERRORCODE=";
+const mime = "x-application/bash-notebook";
+const controllerId = "bash-notebook-controller-id";
+const notebookType = "bash-notebook";
+const label = "Bash notebook";
+const supportedLanguages = ["shellscript"];
 
+export default class Controller {
   private readonly controller: NotebookController;
   private executionOrder = 0;
   private isExecuting = false;
@@ -26,12 +27,12 @@ export default class Controller {
 
   constructor() {
     this.controller = notebooks.createNotebookController(
-      this.controllerId,
-      this.notebookType,
-      this.label
+      controllerId,
+      notebookType,
+      label
     );
 
-    this.controller.supportedLanguages = this.supportedLanguages;
+    this.controller.supportedLanguages = supportedLanguages;
     this.controller.supportsExecutionOrder = true;
     this.controller.executeHandler = this.executeHandler.bind(this);
 
@@ -42,8 +43,6 @@ export default class Controller {
       cwd: process.env.HOME,
       env: <{ [key: string]: string }>process.env,
     });
-
-    console.log(this.pty.process, this.pty.pid);
   }
 
   dispose() {
@@ -63,9 +62,9 @@ export default class Controller {
 
   private async doExecution(cell: NotebookCell): Promise<void> {
     // Can only execute one cell at the time
-    if (this.isExecuting) {
-      return;
-    }
+    // if (this.isExecuting) {
+    //   return;
+    // }
 
     const execution = this.controller.createNotebookCellExecution(cell);
     execution.executionOrder = ++this.executionOrder;
@@ -83,13 +82,15 @@ export default class Controller {
         return;
       }
 
+      // ➜
+
       const json = {
         uri: cell.document.uri.toString(),
         data,
       };
 
       execution.appendOutput(
-        new NotebookCellOutput([NotebookCellOutputItem.json(json, this.mime)])
+        new NotebookCellOutput([NotebookCellOutputItem.json(json, mime)])
       );
 
       console.log(`'${data}'`);
@@ -107,7 +108,8 @@ export default class Controller {
     }
 
     commands.forEach((command) => {
-      this.pty.write(`${command}\r`);
+      this.pty.write(`${command}; echo ${errorCode}$?\r`);
+      // this.pty.write(`${command}\r`);
     });
   }
 }

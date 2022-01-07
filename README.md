@@ -1,6 +1,8 @@
-# Bash notebook
+# BashBook
 
 A notebook for bash
+
+**Early version. Not for public consumption yet!**
 
 ## Build dependencies
 
