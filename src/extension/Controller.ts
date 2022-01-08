@@ -11,6 +11,7 @@ import { IPty, spawn } from "node-pty";
 import { getChildrenForPPID } from "./ps";
 import { getShell } from "./Options";
 
+const CTRL_C = "\x03";
 const errorCode = "ERRORCODE=";
 const mime = "x-application/bash-notebook";
 const controllerId = "bash-notebook-controller-id";
@@ -166,9 +167,10 @@ export default class Controller {
     });
 
     cancelPromise.then(() => {
+      console.log("cancelPromise");
+      this.pty.write(CTRL_C);
       disposable.dispose();
       this.isExecuting = false;
-      // TODO kill actual process?
       this.runExecutionQueue();
     });
 
