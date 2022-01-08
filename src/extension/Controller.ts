@@ -29,34 +29,9 @@ export default class Controller {
   private executionQueue: CommandExecution[] = [];
   private executionOrder = 0;
   private isExecuting = false;
-  private pty!: IPty;
-  private shellPid!: number;
+  private pty: IPty;
 
-  public static async create() {
-    const instance = new Controller();
-
-    instance.pty = spawn(getShell(), [], {
-      name: "xterm-color",
-      cols: 80,
-      rows: 30,
-      cwd: process.env.HOME,
-      env: <{ [key: string]: string }>process.env,
-    });
-
-    console.debug("pty pid", instance.pty.pid);
-
-    const childPids = await getChildrenForPPID(instance.pty.pid);
-    if (childPids.length !== 1) {
-      instance.dispose();
-      throw Error("Can't find PID for shell process");
-    }
-    instance.shellPid = childPids[0];
-    console.debug("shell pid", instance.shellPid);
-
-    return instance;
-  }
-
-  private constructor() {
+  constructor() {
     this.controller = notebooks.createNotebookController(
       controllerId,
       notebookType,
@@ -66,6 +41,17 @@ export default class Controller {
     this.controller.supportedLanguages = supportedLanguages;
     this.controller.supportsExecutionOrder = true;
     this.controller.executeHandler = this.executeHandler.bind(this);
+
+    this.pty = spawn(getShell(), [], {
+      name: "xterm-color",
+      cols: 80,
+      rows: 30,
+      cwd: process.env.HOME,
+      env: <{ [key: string]: string }>process.env,
+    });
+
+    console.debug("pty pid", this.pty.pid);
+    getChildrenForPPID(this.pty.pid).then(console.log);
   }
 
   dispose() {
@@ -136,6 +122,8 @@ export default class Controller {
     let waitingForCommand = true;
 
     const disposable = this.pty.onData((data) => {
+      getChildrenForPPID(this.pty.pid).then(console.log);
+
       // Execution is already canceled
       if (execution.token.isCancellationRequested) {
         disposable.dispose();

@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import Controller from "./Controller";
 import Serializer from "./Serializer";
 
-export async function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.registerNotebookSerializer(
       "bash-notebook",
@@ -13,7 +13,7 @@ export async function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  context.subscriptions.push(await Controller.create());
+  context.subscriptions.push(new Controller());
 }
 
 export function deactivate() {}
