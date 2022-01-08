@@ -8,10 +8,8 @@ import {
   notebooks,
 } from "vscode";
 import { spawn } from "node-pty";
-
-const shell = "C:\\Program Files\\Git\\bin\\bash.exe"; // TODO
-// const shell = "powershell.exe";
-// const shell = "bash.exe";
+import { getChildrenForPPID } from "./ps";
+import { getShell } from "./Options";
 
 const errorCode = "ERRORCODE=";
 const mime = "x-application/bash-notebook";
@@ -44,12 +42,18 @@ export default class Controller {
     this.controller.supportsExecutionOrder = true;
     this.controller.executeHandler = this.executeHandler.bind(this);
 
-    this.pty = spawn(shell, [], {
+    this.pty = spawn(getShell(), [], {
       name: "xterm-color",
       cols: 80,
       rows: 30,
       cwd: process.env.HOME,
       env: <{ [key: string]: string }>process.env,
+    });
+
+    console.log("pty pid", this.pty.pid);
+
+    getChildrenForPPID(this.pty.pid).then((pids) => {
+      console.log("bash pid", pids[0]);
     });
   }
 
