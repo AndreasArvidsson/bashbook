@@ -22,6 +22,7 @@ interface CommandExecution {
   command: string;
   execution: NotebookCellExecution;
   uri: string;
+  cancelPromise: Promise<void>;
 }
 
 export default class Controller {
@@ -51,7 +52,7 @@ export default class Controller {
     });
 
     console.debug("pty pid", this.pty.pid);
-    getChildrenForPPID(this.pty.pid).then(console.log);
+    getChildrenForPPID(this.pty.pid).then(console.debug);
   }
 
   dispose() {
@@ -87,17 +88,19 @@ export default class Controller {
       return;
     }
 
+    const cancelPromise = new Promise<void>((resolve) => {
+      execution.token.onCancellationRequested(resolve);
+    });
+
+    cancelPromise.then(() => {
+      execution.end(false, Date.now());
+    });
+
     this.executionQueue.push({
       command: commands.join("; "),
       execution,
       uri: cell.document.uri.toString(),
-    });
-
-    execution.token.onCancellationRequested(() => {
-      execution.end(false, Date.now());
-      this.isExecuting = false;
-      // TODO kill actual process?
-      this.runExecutionQueue();
+      cancelPromise,
     });
 
     this.runExecutionQueue();
@@ -117,16 +120,22 @@ export default class Controller {
       return;
     }
 
-    const { command, execution, uri } = this.executionQueue.shift()!;
+    const { command, execution, uri, cancelPromise } =
+      this.executionQueue.shift()!;
+
+    if (execution.token.isCancellationRequested) {
+      this.runExecutionQueue();
+      return;
+    }
+
     this.isExecuting = true;
     let waitingForCommand = true;
 
     const disposable = this.pty.onData((data) => {
-      getChildrenForPPID(this.pty.pid).then(console.log);
+      getChildrenForPPID(this.pty.pid).then(console.debug);
 
       // Execution is already canceled
       if (execution.token.isCancellationRequested) {
-        disposable.dispose();
         return;
       }
 
@@ -154,6 +163,13 @@ export default class Controller {
       }
 
       execution.appendOutput(this.getOutput(uri, data));
+    });
+
+    cancelPromise.then(() => {
+      disposable.dispose();
+      this.isExecuting = false;
+      // TODO kill actual process?
+      this.runExecutionQueue();
     });
 
     this.pty.write(`${command}; echo ${errorCode}$?\r`);
