@@ -7,7 +7,7 @@ import {
   NotebookDocument,
   notebooks,
 } from "vscode";
-import { spawn } from "node-pty";
+import { IPty, spawn } from "node-pty";
 import { getChildrenForPPID } from "./ps";
 import { getShell } from "./Options";
 
@@ -29,9 +29,34 @@ export default class Controller {
   private executionQueue: CommandExecution[] = [];
   private executionOrder = 0;
   private isExecuting = false;
-  private pty;
+  private pty!: IPty;
+  private shellPid!: number;
 
-  constructor() {
+  public static async create() {
+    const instance = new Controller();
+
+    instance.pty = spawn(getShell(), [], {
+      name: "xterm-color",
+      cols: 80,
+      rows: 30,
+      cwd: process.env.HOME,
+      env: <{ [key: string]: string }>process.env,
+    });
+
+    console.debug("pty pid", instance.pty.pid);
+
+    const childPids = await getChildrenForPPID(instance.pty.pid);
+    if (childPids.length !== 1) {
+      instance.dispose();
+      throw Error("Can't find PID for shell process");
+    }
+    instance.shellPid = childPids[0];
+    console.debug("shell pid", instance.shellPid);
+
+    return instance;
+  }
+
+  private constructor() {
     this.controller = notebooks.createNotebookController(
       controllerId,
       notebookType,
@@ -41,20 +66,6 @@ export default class Controller {
     this.controller.supportedLanguages = supportedLanguages;
     this.controller.supportsExecutionOrder = true;
     this.controller.executeHandler = this.executeHandler.bind(this);
-
-    this.pty = spawn(getShell(), [], {
-      name: "xterm-color",
-      cols: 80,
-      rows: 30,
-      cwd: process.env.HOME,
-      env: <{ [key: string]: string }>process.env,
-    });
-
-    console.log("pty pid", this.pty.pid);
-
-    getChildrenForPPID(this.pty.pid).then((pids) => {
-      console.log("bash pid", pids[0]);
-    });
   }
 
   dispose() {

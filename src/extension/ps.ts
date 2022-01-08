@@ -1,14 +1,14 @@
 import { exec } from "child_process";
 import { platform } from "os";
 
-export const getChildrenForPPID = (ppid: number): Promise<Number[]> => {
+export const getChildrenForPPID = (ppid: number): Promise<number[]> => {
   if (platform() === "win32") {
     return getChildrenForPpidWin(ppid);
   }
   return getChildrenForPpidLinux(ppid);
 };
 
-const getChildrenForPpidWin = (ppid: number): Promise<Number[]> => {
+const getChildrenForPpidWin = (ppid: number): Promise<number[]> => {
   return new Promise((resolve, reject) => {
     exec(
       `wmic process where "ParentProcessId='${ppid}'" get ProcessId`,
@@ -36,7 +36,7 @@ const getChildrenForPpidWin = (ppid: number): Promise<Number[]> => {
   });
 };
 
-const getChildrenForPpidLinux = (ppid: number): Promise<Number[]> => {
+const getChildrenForPpidLinux = (ppid: number): Promise<number[]> => {
   return new Promise((resolve, reject) => {
     exec(
       `ps -l | grep -e PPID -e ${ppid}`,
