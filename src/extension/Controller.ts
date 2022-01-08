@@ -7,12 +7,10 @@ import {
   NotebookDocument,
   notebooks,
 } from "vscode";
-import { IPty, spawn } from "node-pty";
 import { getChildrenForPPID } from "./ps";
 import { getShell } from "./Options";
+import Pty from "./Pty";
 
-const CTRL_C = "\x03";
-const errorCode = "ERRORCODE=";
 const mime = "x-application/bashbook";
 const controllerId = "bashbook-controller-id";
 const notebookType = "bashbook";
@@ -31,7 +29,7 @@ export default class Controller {
   private executionQueue: CommandExecution[] = [];
   private executionOrder = 0;
   private isExecuting?: CommandExecution;
-  private pty: IPty;
+  private pty;
 
   constructor() {
     this.controller = notebooks.createNotebookController(
@@ -47,13 +45,7 @@ export default class Controller {
     const shell = getShell();
     console.debug(`Spawning shell '${shell}'`);
 
-    this.pty = spawn(shell, [], {
-      name: "xterm-color",
-      cols: 80,
-      rows: 30,
-      cwd: process.env.HOME,
-      env: <{ [key: string]: string }>process.env,
-    });
+    this.pty = new Pty(shell);
 
     console.debug("pty pid", this.pty.pid);
     getChildrenForPPID(this.pty.pid).then(console.debug);
@@ -61,7 +53,7 @@ export default class Controller {
 
   dispose() {
     this.controller.dispose();
-    this.pty.kill();
+    this.pty.dispose();
   }
 
   onData(uri: string, data: string) {
@@ -139,48 +131,25 @@ export default class Controller {
     }
 
     this.isExecuting = commandExecution;
-    let waitingForCommand = true;
 
-    const disposable = this.pty.onData((data) => {
-      getChildrenForPPID(this.pty.pid).then(console.debug);
+    const onData = (data: string) => {
+      execution.appendOutput(this.getOutput(uri, data));
+    };
 
-      // Execution is already canceled
-      if (execution.token.isCancellationRequested) {
-        return;
-      }
+    const { promise, terminate } = this.pty.writeCommand(command, onData);
 
-      // Don't print command
-      if (waitingForCommand) {
-        waitingForCommand = false;
-        return;
-      }
+    cancelPromise.then(terminate);
 
-      const errorCodeIndex = data.indexOf(errorCode);
-      if (errorCodeIndex > -1) {
-        const code = data[errorCodeIndex + errorCode.length];
-        const success = code === "0";
-        if (errorCodeIndex > 0) {
-          execution.appendOutput(
-            this.getOutput(uri, data.substring(0, errorCodeIndex))
-          );
-        }
-        execution.end(success, Date.now());
-        disposable.dispose();
+    promise
+      .then(() => {
+        execution.end(true, Date.now());
+      })
+      .catch(() => {
+        execution.end(false, Date.now());
+      })
+      .finally(() => {
         this.isExecuting = undefined;
         this.runExecutionQueue();
-        return;
-      }
-
-      execution.appendOutput(this.getOutput(uri, data));
-    });
-
-    cancelPromise.then(() => {
-      disposable.dispose();
-      this.pty.write(CTRL_C);
-      this.isExecuting = undefined;
-      this.runExecutionQueue();
-    });
-
-    this.pty.write(`${command}; echo ${errorCode}$?\r`);
+      });
   }
 }
