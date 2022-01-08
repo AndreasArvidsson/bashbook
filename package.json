@@ -1,6 +1,6 @@
 {
-    "name": "bash-notebook",
-    "displayName": "Bash notebook",
+    "name": "bashbook",
+    "displayName": "BashBook",
     "description": "Notebook for bash",
     "version": "0.0.1",
     "engines": {
@@ -10,7 +10,7 @@
         "Other"
     ],
     "activationEvents": [
-        "onNotebook:bash-notebook"
+        "onNotebook:bashbook"
     ],
     "files": [
         "./out/*"
@@ -19,9 +19,9 @@
     "contributes": {
         "notebooks": [
             {
-                "id": "bash-notebook",
-                "type": "bash-notebook",
-                "displayName": "Bash notebook",
+                "id": "bashbook",
+                "type": "bashbook",
+                "displayName": "BashBook",
                 "selector": [
                     {
                         "filenamePattern": "*.bashbook"
@@ -31,11 +31,12 @@
         ],
         "notebookRenderer": [
             {
-                "id": "bash-notebook-renderer",
+                "id": "bashbook-renderer",
                 "entrypoint": "./out/renderer.js",
-                "displayName": "Bash notebook renderer",
+                "displayName": "BashBook",
+                "requiresMessaging": "optional",
                 "mimeTypes": [
-                    "x-application/bash-notebook"
+                    "x-application/bashbook"
                 ]
             }
         ]

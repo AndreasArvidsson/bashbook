@@ -8,6 +8,8 @@ A notebook for bash
 
 ### Rebuild node-pty with correct electron version
 
+Only necessary on windows... probably
+
 ```
 cd node_modules/node-pty
 ../.bin/electron-rebuild

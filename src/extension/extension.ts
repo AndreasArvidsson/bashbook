@@ -4,16 +4,21 @@ import Serializer from "./Serializer";
 
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
-    vscode.workspace.registerNotebookSerializer(
-      "bash-notebook",
-      new Serializer(),
-      {
-        transientOutputs: true,
-      }
-    )
+    vscode.workspace.registerNotebookSerializer("bashbook", new Serializer(), {
+      transientOutputs: true,
+    })
   );
 
-  context.subscriptions.push(new Controller());
+  const controller = new Controller();
+  context.subscriptions.push(controller);
+
+  const messageChannel =
+    vscode.notebooks.createRendererMessaging("bashbook-renderer");
+
+  messageChannel.onDidReceiveMessage((e) => {
+    const { uri, data } = e.message;
+    controller.onData(uri, data);
+  });
 }
 
 export function deactivate() {}

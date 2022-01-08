@@ -13,10 +13,10 @@ import { getShell } from "./Options";
 
 const CTRL_C = "\x03";
 const errorCode = "ERRORCODE=";
-const mime = "x-application/bash-notebook";
-const controllerId = "bash-notebook-controller-id";
-const notebookType = "bash-notebook";
-const label = "Bash notebook";
+const mime = "x-application/bashbook";
+const controllerId = "bashbook-controller-id";
+const notebookType = "bashbook";
+const label = "BashBook";
 const supportedLanguages = ["shellscript"];
 
 interface CommandExecution {
@@ -30,7 +30,7 @@ export default class Controller {
   private readonly controller: NotebookController;
   private executionQueue: CommandExecution[] = [];
   private executionOrder = 0;
-  private isExecuting = false;
+  private isExecuting?: CommandExecution;
   private pty: IPty;
 
   constructor() {
@@ -61,6 +61,12 @@ export default class Controller {
     this.pty.kill();
   }
 
+  onData(uri: string, data: string) {
+    if (this.isExecuting?.uri === uri) {
+      this.pty.write(data);
+    }
+  }
+
   private executeHandler(
     cells: NotebookCell[],
     _notebook: NotebookDocument,
@@ -85,7 +91,7 @@ export default class Controller {
 
     if (commands.length === 0) {
       execution.end(true, Date.now());
-      this.isExecuting = false;
+      this.isExecuting = undefined;
       return;
     }
 
@@ -117,19 +123,19 @@ export default class Controller {
   }
 
   private runExecutionQueue() {
-    if (this.executionQueue.length === 0 || this.isExecuting) {
+    if (this.executionQueue.length === 0 || this.isExecuting != null) {
       return;
     }
 
-    const { command, execution, uri, cancelPromise } =
-      this.executionQueue.shift()!;
+    const commandExecution = this.executionQueue.shift()!;
+    const { command, execution, uri, cancelPromise } = commandExecution;
 
     if (execution.token.isCancellationRequested) {
       this.runExecutionQueue();
       return;
     }
 
-    this.isExecuting = true;
+    this.isExecuting = commandExecution;
     let waitingForCommand = true;
 
     const disposable = this.pty.onData((data) => {
@@ -157,8 +163,7 @@ export default class Controller {
         }
         execution.end(success, Date.now());
         disposable.dispose();
-        this.isExecuting = false;
-
+        this.isExecuting = undefined;
         this.runExecutionQueue();
         return;
       }
@@ -167,10 +172,9 @@ export default class Controller {
     });
 
     cancelPromise.then(() => {
-      console.log("cancelPromise");
-      this.pty.write(CTRL_C);
       disposable.dispose();
-      this.isExecuting = false;
+      this.pty.write(CTRL_C);
+      this.isExecuting = undefined;
       this.runExecutionQueue();
     });
 
