@@ -4,7 +4,7 @@ import "xterm/css/xterm.css";
 import "./renderer.css";
 
 export const activate: ActivationFunction = (context) => {
-  const map = new Map();
+  const map = new Map<string, Terminal>();
 
   const createTerminal = (uri: string, element: HTMLElement) => {
     const term = new Terminal({
@@ -25,17 +25,24 @@ export const activate: ActivationFunction = (context) => {
     return term;
   };
 
-  const getTerminal = (uri: string, element: HTMLElement) => {
-    if (!map.has(uri)) {
-      map.set(uri, createTerminal(uri, element));
+  const getTerminal = (uri: string, create: boolean, element: HTMLElement) => {
+    const has = map.has(uri);
+    if (create || !has) {
+      if (has) {
+        const term = map.get(uri)!;
+        term.clear();
+        term.open(element);
+      } else {
+        map.set(uri, createTerminal(uri, element));
+      }
     }
-    return map.get(uri);
+    return map.get(uri)!;
   };
 
   return {
     renderOutputItem(outputItem, element) {
-      const { uri, data } = outputItem.json();
-      const term = getTerminal(uri, element);
+      const { uri, data, create } = outputItem.json();
+      const term = getTerminal(uri, create, element);
       term.write(data);
     },
   };

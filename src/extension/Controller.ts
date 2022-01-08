@@ -111,15 +111,6 @@ export default class Controller {
     this.runExecutionQueue();
   }
 
-  private getOutput(uri: string, data: string) {
-    const json = { uri, data };
-
-    return new NotebookCellOutput([
-      NotebookCellOutputItem.json(json, mime),
-      // NotebookCellOutputItem.text(data),
-    ]);
-  }
-
   private runExecutionQueue() {
     if (this.executionQueue.length === 0 || this.isExecuting != null) {
       return;
@@ -135,6 +126,7 @@ export default class Controller {
     }
 
     this.isExecuting = commandExecution;
+    let create = true;
 
     const onData = (data: string) => {
       if (execution.token.isCancellationRequested) {
@@ -145,7 +137,15 @@ export default class Controller {
         console.debug("child pids at onData", pids);
       });
 
-      execution.appendOutput(this.getOutput(uri, data));
+      const json = { uri, data, create };
+      create = false;
+
+      execution.appendOutput(
+        new NotebookCellOutput([
+          NotebookCellOutputItem.json(json, mime),
+          // NotebookCellOutputItem.text(data),
+        ])
+      );
     };
 
     const { promise, terminate } = this.pty.writeCommand(command, onData);
