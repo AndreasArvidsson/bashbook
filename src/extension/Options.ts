@@ -1,7 +1,13 @@
+import { workspace } from "vscode";
+import { platform } from "os";
+
+const NAMESPACE = "bashbook";
+
 export function getShell() {
-  const shell = "C:\\Program Files\\Git\\bin\\bash.exe"; // TODO
-  // const shell = "C:\\Program Files\\Git\\usr\\bin\\bash.exe"; // TODO
-  // const shell = "powershell.exe";
-  // const shell = "bash.exe";
-  return shell;
+  const shell = workspace.getConfiguration(NAMESPACE).get<string>("shell");
+  if (shell) {
+    return shell;
+  }
+
+  return platform() === "win32" ? "bash.exe" : "bash";
 }

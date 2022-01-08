@@ -44,7 +44,10 @@ export default class Controller {
     this.controller.supportsExecutionOrder = true;
     this.controller.executeHandler = this.executeHandler.bind(this);
 
-    this.pty = spawn(getShell(), [], {
+    const shell = getShell();
+    console.debug(`Spawning shell '${shell}'`);
+
+    this.pty = spawn(shell, [], {
       name: "xterm-color",
       cols: 80,
       rows: 30,

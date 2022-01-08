@@ -17,6 +17,15 @@
     ],
     "main": "./out/extension.js",
     "contributes": {
+        "configuration": {
+            "title": "BashBook",
+            "properties": {
+                "bashbook.shell": {
+                    "type": "string",
+                    "description": "Shell executable (eg: bash, bash.exe)"
+                }
+            }
+        },
         "notebooks": [
             {
                 "id": "bashbook",
