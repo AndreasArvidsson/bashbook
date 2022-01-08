@@ -33,7 +33,7 @@ export default class Pty {
     let waitingForCommand = true;
 
     const disposable = this.pty.onData((data) => {
-      // Don't print command
+      // Don't print command when it's echoed back
       if (waitingForCommand) {
         waitingForCommand = false;
         return;

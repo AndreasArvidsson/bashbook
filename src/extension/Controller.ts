@@ -12,7 +12,7 @@ import { getShell } from "./Options";
 import Pty from "./Pty";
 
 const mime = "x-application/bashbook";
-const controllerId = "bashbook-controller-id";
+const controllerId = "bashbook-controller";
 const notebookType = "bashbook";
 const label = "BashBook";
 const supportedLanguages = ["shellscript"];
@@ -48,7 +48,10 @@ export default class Controller {
     this.pty = new Pty(shell);
 
     console.debug("pty pid", this.pty.pid);
-    getChildrenForPPID(this.pty.pid).then(console.debug);
+
+    getChildrenForPPID(this.pty.pid).then((pids) => {
+      console.debug("child pids at constructor", pids);
+    });
   }
 
   dispose() {
@@ -125,6 +128,7 @@ export default class Controller {
     const commandExecution = this.executionQueue.shift()!;
     const { command, execution, uri, cancelPromise } = commandExecution;
 
+    // Execution is already canceled
     if (execution.token.isCancellationRequested) {
       this.runExecutionQueue();
       return;
@@ -133,6 +137,14 @@ export default class Controller {
     this.isExecuting = commandExecution;
 
     const onData = (data: string) => {
+      if (execution.token.isCancellationRequested) {
+        return;
+      }
+
+      getChildrenForPPID(this.pty.pid).then((pids) => {
+        console.debug("child pids at onData", pids);
+      });
+
       execution.appendOutput(this.getOutput(uri, data));
     };
 
