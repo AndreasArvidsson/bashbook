@@ -1,25 +1,14 @@
 import type { ActivationFunction, OutputItem } from "vscode-notebook-renderer";
-import { Terminal } from "xterm";
-import "xterm/css/xterm.css";
 import {
   OutputMessage,
   OutputMessageData,
   OutputMessageFinished,
 } from "../common/OutputMessage";
 import { ExtensionMessage } from "../common/ExtensionMessage";
-import calcTermCols from "./calcTermCols";
-import "./renderer.css";
-
-interface TerminalState {
-  term: Terminal;
-  content: string;
-  disableStdin: () => void;
-}
-
-const ROWS_MAX = 30;
+import Terminal from "./Terminal";
 
 export const activate: ActivationFunction = (context) => {
-  const uriMap = new Map<string, TerminalState>();
+  const uriMap = new Map<string, Terminal>();
 
   const postMessage = (message: ExtensionMessage) => {
     context.postMessage!(message);
@@ -27,13 +16,10 @@ export const activate: ActivationFunction = (context) => {
 
   const createTerminal = (uri: string, cols: number, element: HTMLElement) => {
     const term = new Terminal({
-      rendererType: "dom",
-      cols: cols,
-      rows: 1,
-      cursorStyle: "bar",
+      cols,
     });
 
-    const onDataDisposable = term.onData((data) => {
+    term.onInput((data) => {
       postMessage({
         type: "data",
         uri,
@@ -41,18 +27,9 @@ export const activate: ActivationFunction = (context) => {
       });
     });
 
-    const disableStdin = () => {
-      term.options.disableStdin = true;
-      onDataDisposable.dispose();
-      // Hide cursor
-      term.options.cursorStyle = "underline";
-    };
-
-    const content = "";
-
     term.open(element);
 
-    return { term, content, disableStdin };
+    return term;
   };
 
   const getTerminal = (
@@ -63,9 +40,8 @@ export const activate: ActivationFunction = (context) => {
   ) => {
     if (create) {
       if (uriMap.has(uri)) {
-        uriMap.get(uri)!.term.dispose();
+        uriMap.get(uri)!.dispose();
       }
-
       uriMap.set(uri, createTerminal(uri, cols, element));
     }
     return uriMap.get(uri)!;
@@ -75,28 +51,20 @@ export const activate: ActivationFunction = (context) => {
     { uri, data, cols, firstCommand }: OutputMessageData,
     element: HTMLElement
   ) => {
-    const state = getTerminal(uri, cols, firstCommand, element);
+    const term = getTerminal(uri, cols, firstCommand, element);
 
-    state.term.write(data);
-    state.content += data;
-
-    // Resize number of rows based on actual data content
-    const lines = state.content.split("\n");
-    const rows = Math.min(ROWS_MAX, lines.length);
-    if (state.term.rows !== rows) {
-      state.term.resize(state.term.cols, rows);
-    }
+    term.writeData(data);
   };
 
   const onFinishedMessage = ({ uri }: OutputMessageFinished) => {
-    const state = uriMap.get(uri)!;
+    const term = uriMap.get(uri)!;
 
     // Stop listening for keyboard inputs
-    state.disableStdin();
+    term.disableInput();
 
     // Resize number of columns (for next command) based on output element size
-    const cols = calcTermCols(state.term);
-    if (cols && state.term.cols !== cols) {
+    const cols = term.calcTermCols();
+    if (cols && term.cols !== cols) {
       postMessage({
         type: "setCols",
         cols,

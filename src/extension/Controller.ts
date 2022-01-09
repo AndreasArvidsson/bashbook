@@ -9,7 +9,10 @@ import {
 } from "vscode";
 import { getShell } from "./Options";
 import Pty from "./Pty";
-import { OutputMessage } from "../common/OutputMessage";
+import {
+  OutputMessageData,
+  OutputMessageFinished,
+} from "../common/OutputMessage";
 
 const mime = "x-application/bashbook";
 const controllerId = "bashbook-controller";
@@ -72,7 +75,7 @@ export default class Controller {
     }
   }
 
-  private async doExecution(cell: NotebookCell): Promise<void> {
+  private doExecution(cell: NotebookCell) {
     const execution = this.controller.createNotebookCellExecution(cell);
     execution.executionOrder = ++this.executionOrder;
     execution.start(Date.now());
@@ -131,7 +134,7 @@ export default class Controller {
         return;
       }
 
-      const json: OutputMessage = {
+      const json: OutputMessageData = {
         type: "data",
         uri,
         data,
@@ -150,7 +153,7 @@ export default class Controller {
 
     const end = (success: boolean) => {
       if (!firstCommand) {
-        const json: OutputMessage = {
+        const json: OutputMessageFinished = {
           type: "finished",
           uri,
         };
