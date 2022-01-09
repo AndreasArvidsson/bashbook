@@ -1,4 +1,4 @@
-import type { ActivationFunction } from "vscode-notebook-renderer";
+import type { ActivationFunction, OutputItem } from "vscode-notebook-renderer";
 import { Terminal } from "xterm";
 import "xterm/css/xterm.css";
 import RenderCommand from "../common/RenderCommand";
@@ -14,7 +14,7 @@ const COLS = 80;
 const ROWS_MAX = 30;
 
 export const activate: ActivationFunction = (context) => {
-  const map = new Map<string, TerminalState>();
+  const uriMap = new Map<string, TerminalState>();
 
   const createTerminal = (uri: string, element: HTMLElement) => {
     const term = new Terminal({
@@ -47,36 +47,38 @@ export const activate: ActivationFunction = (context) => {
 
   const getTerminal = (uri: string, create: boolean, element: HTMLElement) => {
     if (create) {
-      if (map.has(uri)) {
-        map.get(uri)!.term.dispose();
+      if (uriMap.has(uri)) {
+        uriMap.get(uri)!.term.dispose();
       }
 
-      map.set(uri, createTerminal(uri, element));
+      uriMap.set(uri, createTerminal(uri, element));
     }
-    return map.get(uri)!;
+    return uriMap.get(uri)!;
+  };
+
+  const renderOutputItem = (outputItem: OutputItem, element: HTMLElement) => {
+    const { uri, data, firstCommand, lastCommand }: RenderCommand =
+      outputItem.json();
+
+    const state = getTerminal(uri, firstCommand, element);
+
+    if (data != null) {
+      state.term.write(data);
+      state.content += data;
+      const lines = state.content.split("\n");
+      const rows = Math.min(ROWS_MAX, lines.length);
+      if (state.term.rows !== rows) {
+        state.term.resize(COLS, rows);
+      }
+    }
+
+    // Execution is over. Stop listening for keyboard inputs.
+    if (lastCommand) {
+      state.disableStdin();
+    }
   };
 
   return {
-    renderOutputItem(outputItem, element) {
-      const { uri, data, firstCommand, lastCommand }: RenderCommand =
-        outputItem.json();
-
-      const state = getTerminal(uri, firstCommand, element);
-
-      if (data != null) {
-        state.term.write(data);
-        state.content += data;
-        const lines = state.content.split("\n");
-        const rows = Math.min(ROWS_MAX, lines.length);
-        if (state.term.rows !== rows) {
-          state.term.resize(COLS, rows);
-        }
-      }
-
-      // Execution is over. Stop listening for keyboard inputs.
-      if (lastCommand) {
-        state.disableStdin();
-      }
-    },
+    renderOutputItem,
   };
 };
