@@ -32,8 +32,13 @@ export default class Pty {
     this.pty.kill();
   }
 
+  getCols() {
+    return this.pty.cols;
+  }
+
   setCols(cols: number) {
     this.pty.resize(cols, ROWS);
+    this.pty.write("\r");
   }
 
   write(data: string) {

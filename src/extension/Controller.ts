@@ -9,7 +9,7 @@ import {
 } from "vscode";
 import { getShell } from "./Options";
 import Pty from "./Pty";
-import RenderCommand from "../common/RenderCommand";
+import { OutputMessage } from "../common/OutputMessage";
 
 const mime = "x-application/bashbook";
 const controllerId = "bashbook-controller";
@@ -56,6 +56,10 @@ export default class Controller {
     if (this.isExecuting?.uri === uri) {
       this.pty.write(data);
     }
+  }
+
+  setCols(cols: number) {
+    this.pty.setCols(cols);
   }
 
   private executeHandler(
@@ -127,11 +131,12 @@ export default class Controller {
         return;
       }
 
-      const json: RenderCommand = {
+      const json: OutputMessage = {
+        type: "data",
         uri,
         data,
         firstCommand,
-        lastCommand: false,
+        cols: this.pty.getCols(),
       };
       firstCommand = false;
 
@@ -145,10 +150,9 @@ export default class Controller {
 
     const end = (success: boolean) => {
       if (!firstCommand) {
-        const json: RenderCommand = {
+        const json: OutputMessage = {
+          type: "finished",
           uri,
-          firstCommand: false,
-          lastCommand: true,
         };
         execution.appendOutput(
           new NotebookCellOutput([NotebookCellOutputItem.json(json, mime)])

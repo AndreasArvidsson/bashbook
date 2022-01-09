@@ -1,3 +1,9 @@
+/* calcTermCols() can't determine padding TODO */
+.output_container > div {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
 .xterm-viewport {
   background-color: var(--theme-background) !important;
 }
