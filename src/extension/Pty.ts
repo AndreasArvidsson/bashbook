@@ -68,9 +68,10 @@ export default class Pty {
           // There is data before the prompt
           if (uuidIndex > 0) {
             // Remove trailing new line
-            const d = data.substring(0, uuidIndex).replace(/\r\n$/, "");
-            // const d = data.substring(0, uuidIndex); // TODO
-            onData(d);
+            data = data.substring(0, uuidIndex).replace(/\r\n$/, "");
+            if (data) {
+              onData(data);
+            }
           }
 
           disposable.dispose();

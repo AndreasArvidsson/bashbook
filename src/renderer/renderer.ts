@@ -36,9 +36,8 @@ export const activate: ActivationFunction = (context) => {
   };
 
   const getTerminal = (uri: string, create: boolean, element: HTMLElement) => {
-    const has = map.has(uri);
-    if (create || !has) {
-      if (has) {
+    if (create) {
+      if (map.has(uri)) {
         map.get(uri)!.term.dispose();
       }
 
@@ -53,10 +52,6 @@ export const activate: ActivationFunction = (context) => {
     renderOutputItem(outputItem, element) {
       const { uri, data, firstCommand, lastCommand }: RenderCommand =
         outputItem.json();
-
-      // if (firstCommand && lastCommand) {
-      //   return;
-      // }
 
       const state = getTerminal(uri, firstCommand, element);
 
