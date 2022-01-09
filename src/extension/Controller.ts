@@ -4,7 +4,6 @@ import {
   NotebookCellOutput,
   NotebookCellOutputItem,
   NotebookController,
-  NotebookDocument,
   notebooks,
 } from "vscode";
 import { getShell } from "./Options";
@@ -13,6 +12,7 @@ import {
   OutputMessageData,
   OutputMessageFinished,
 } from "../common/OutputMessage";
+import updateCommand from "./updateCommand";
 
 const mime = "x-application/bashbook";
 const controllerId = "bashbook-controller";
@@ -123,6 +123,20 @@ export default class Controller {
     }
 
     this.isExecuting = commandExecution;
+
+    // Update command with variables
+    let updatedCommand;
+    try {
+      updatedCommand = updateCommand(command, execution);
+    } catch (e) {
+      execution.appendOutput(
+        new NotebookCellOutput([NotebookCellOutputItem.error(<Error>e)])
+      );
+      execution.end(false, Date.now());
+      this.isExecuting = undefined;
+      return;
+    }
+
     let firstCommand = true;
 
     const onData = (data: string) => {
@@ -137,12 +151,13 @@ export default class Controller {
         firstCommand,
         cols: this.pty.getCols(),
       };
+
       firstCommand = false;
 
       execution.appendOutput(
         new NotebookCellOutput([
           NotebookCellOutputItem.json(json, mime),
-          // NotebookCellOutputItem.text(data), TODO
+          // NotebookCellOutputItem.text(data),// TODO
         ])
       );
     };
@@ -162,7 +177,7 @@ export default class Controller {
     };
 
     this.pty
-      .writeCommand(command, onData)
+      .writeCommand(updatedCommand, onData)
       .then((result) => {
         console.log(result.cwd); // TODO
         end(true);
