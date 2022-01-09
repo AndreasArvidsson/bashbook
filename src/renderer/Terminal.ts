@@ -5,8 +5,8 @@ import "./Terminal.css";
 
 const DEFAULT_OPTIONS = {
   rendererType: "dom",
-  rows: 1,
   cursorStyle: "bar",
+  rows: 1,
 };
 
 const ROWS_MAX = 30;
@@ -15,7 +15,7 @@ export default class Terminal extends xTerminal {
   private dataContent = "";
   private onDataDisposable?: IDisposable;
 
-  constructor(options?: ITerminalOptions) {
+  constructor(options: ITerminalOptions) {
     super(Object.assign({}, DEFAULT_OPTIONS, options));
   }
 

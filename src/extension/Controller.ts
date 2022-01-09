@@ -29,8 +29,8 @@ interface CommandExecution {
 export default class Controller {
   private readonly controller: NotebookController;
   private executionQueue: CommandExecution[] = [];
-  private executionOrder = 0;
   private isExecuting?: CommandExecution;
+  private executionOrder = 0;
   private pty;
 
   constructor() {
@@ -65,11 +65,7 @@ export default class Controller {
     this.pty.setCols(cols);
   }
 
-  private executeHandler(
-    cells: NotebookCell[],
-    _notebook: NotebookDocument,
-    _controller: NotebookController
-  ) {
+  private executeHandler(cells: NotebookCell[]) {
     for (const cell of cells) {
       this.doExecution(cell);
     }
