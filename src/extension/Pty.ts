@@ -24,7 +24,7 @@ export default class Pty {
     this.pid = this.pty.pid;
 
     // Set PS1/prompt
-    this.pty.write(`export PS1="${UUID}|$?|\\w|"\r`);
+    this.pty.write(`export PS1="${UUID}|\\$?|\\w|"\r`);
   }
 
   dispose() {
