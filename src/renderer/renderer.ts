@@ -7,6 +7,7 @@ import "./renderer.css";
 interface TerminalState {
   term: Terminal;
   content: string;
+  disableStdin: () => void;
 }
 
 const COLS = 80;
@@ -15,7 +16,7 @@ const ROWS_MAX = 30;
 export const activate: ActivationFunction = (context) => {
   const map = new Map<string, TerminalState>();
 
-  const createTerminal = (uri: string) => {
+  const createTerminal = (uri: string, element: HTMLElement) => {
     const term = new Terminal({
       rendererType: "dom",
       cols: COLS,
@@ -23,16 +24,25 @@ export const activate: ActivationFunction = (context) => {
       cursorStyle: "bar",
     });
 
-    if (context.postMessage) {
-      term.onData((data) => {
-        context.postMessage!({
-          uri,
-          data,
-        });
+    const onDataDisposable = term.onData((data) => {
+      context.postMessage!({
+        uri,
+        data,
       });
-    }
+    });
 
-    return term;
+    const disableStdin = () => {
+      term.options.disableStdin = true;
+      onDataDisposable.dispose();
+      // Hide cursor
+      term.options.cursorStyle = "underline";
+    };
+
+    const content = "";
+
+    term.open(element);
+
+    return { term, content, disableStdin };
   };
 
   const getTerminal = (uri: string, create: boolean, element: HTMLElement) => {
@@ -41,9 +51,7 @@ export const activate: ActivationFunction = (context) => {
         map.get(uri)!.term.dispose();
       }
 
-      const term = createTerminal(uri);
-      term.open(element);
-      map.set(uri, { term, content: "" });
+      map.set(uri, createTerminal(uri, element));
     }
     return map.get(uri)!;
   };
@@ -65,9 +73,9 @@ export const activate: ActivationFunction = (context) => {
         }
       }
 
-      // Execution is over. Hide cursor.
+      // Execution is over. Stop listening for keyboard inputs.
       if (lastCommand) {
-        state.term.options.cursorStyle = "underline";
+        state.disableStdin();
       }
     },
   };
