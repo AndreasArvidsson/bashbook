@@ -52,7 +52,7 @@ export default class Pty {
 
         const uuidIndex = data.indexOf(UUID);
         if (uuidIndex > -1) {
-          const ps1 = data.substring(uuidIndex);
+          const ps1 = data.substring(uuidIndex).replace(/\r\n/g, "");
           const ps1Parts = ps1.split("|");
           const errorCode = Number.parseInt(ps1Parts[1]);
           const cwd = ps1Parts[2];
