@@ -10,6 +10,9 @@ module.exports = {
   experiments: {
     outputModule: true,
   },
+  resolve: {
+    extensions: [".ts"],
+  },
   module: {
     rules: [
       {

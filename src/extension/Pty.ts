@@ -2,6 +2,7 @@ import { IPty, spawn } from "node-pty";
 
 const CTRL_C = "\x03";
 const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";
+const ROWS = 30;
 
 interface Result {
   errorCode: number;
@@ -16,7 +17,7 @@ export default class Pty {
     this.pty = spawn(shell, [], {
       name: "xterm-color",
       cols: 80,
-      rows: 30,
+      rows: ROWS,
       cwd: process.env.HOME,
       env: <{ [key: string]: string }>process.env,
     });
@@ -29,6 +30,10 @@ export default class Pty {
 
   dispose() {
     this.pty.kill();
+  }
+
+  setCols(cols: number) {
+    this.pty.resize(cols, ROWS);
   }
 
   write(data: string) {

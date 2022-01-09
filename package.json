@@ -53,10 +53,10 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "npm run compile:extension && npm run compile:renderer",
-        "compile:extension": "tsc -p ./src/extension",
+        "compile:extension": "tsc --build ./src/extension",
         "compile:renderer": "webpack --mode production",
         "watch": "concurrently -r \"npm:watch:*\"",
-        "watch:extension": "tsc --watch -p ./src/extension",
+        "watch:extension": "tsc --build --watch ./src/extension",
         "watch:renderer": "webpack --mode development --watch"
     },
     "devDependencies": {
