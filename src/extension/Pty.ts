@@ -1,8 +1,12 @@
 import { IPty, spawn } from "node-pty";
-import { createPromise } from "./Promise";
 
 const CTRL_C = "\x03";
-const errorCode = "ERRORCODE=";
+const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";
+
+interface Result {
+  errorCode: number;
+  cwd: string;
+}
 
 export default class Pty {
   public pid: number;
@@ -18,6 +22,9 @@ export default class Pty {
     });
 
     this.pid = this.pty.pid;
+
+    // Set PS1/prompt
+    this.pty.write(`export PS1="${UUID}|$?|\\w|"\r`);
   }
 
   dispose() {
@@ -28,46 +35,46 @@ export default class Pty {
     this.pty.write(data);
   }
 
+  terminate() {
+    this.pty.write(CTRL_C);
+  }
+
   writeCommand(command: string, onData: (data: string) => void) {
-    const { promise, resolve, reject } = createPromise<number>();
-    let waitingForCommand = true;
+    return new Promise<Result>((resolve, reject) => {
+      let waitingForCommand = true;
 
-    const disposable = this.pty.onData((data) => {
-      // Don't print command when it's echoed back
-      if (waitingForCommand) {
-        waitingForCommand = false;
-        return;
-      }
-
-      const errorCodeIndex = data.indexOf(errorCode);
-      if (errorCodeIndex > -1) {
-        const code = Number.parseInt(data[errorCodeIndex + errorCode.length]);
-        const success = code === 0;
-        if (errorCodeIndex > 0) {
-          onData(data.substring(0, errorCodeIndex));
+      const disposable = this.pty.onData((data) => {
+        // Don't print command when it's echoed back
+        if (waitingForCommand) {
+          waitingForCommand = false;
+          return;
         }
-        disposable.dispose();
-        if (success) {
-          resolve(code);
+
+        const uuidIndex = data.indexOf(UUID);
+        if (uuidIndex > -1) {
+          const ps1 = data.substring(uuidIndex);
+          const ps1Parts = ps1.split("|");
+          const errorCode = Number.parseInt(ps1Parts[1]);
+          const cwd = ps1Parts[2];
+          const result = { errorCode, cwd };
+
+          // There is data before the prompt
+          if (uuidIndex > 0) {
+            onData(data.substring(0, uuidIndex));
+          }
+
+          disposable.dispose();
+          if (errorCode === 0) {
+            resolve(result);
+          } else {
+            reject(result);
+          }
         } else {
-          reject(code);
+          onData(data);
         }
-      } else {
-        onData(data);
-      }
+      });
+
+      this.pty.write(`${command}\r`);
     });
-
-    const terminate = () => {
-      disposable.dispose();
-      this.pty.write(CTRL_C);
-      reject(-1);
-    };
-
-    this.pty.write(`${command}; echo ${errorCode}$?\r`);
-
-    return {
-      promise,
-      terminate,
-    };
   }
 }

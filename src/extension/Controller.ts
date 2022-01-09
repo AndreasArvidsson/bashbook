@@ -21,7 +21,6 @@ interface CommandExecution {
   command: string;
   execution: NotebookCellExecution;
   uri: string;
-  cancelPromise: Promise<void>;
 }
 
 export default class Controller {
@@ -93,19 +92,20 @@ export default class Controller {
       return;
     }
 
-    const cancelPromise = new Promise<void>((resolve) => {
-      execution.token.onCancellationRequested(resolve);
-    });
+    const uri = cell.document.uri.toString();
 
-    cancelPromise.then(() => {
-      execution.end(false, Date.now());
+    execution.token.onCancellationRequested(() => {
+      if (this.isExecuting?.uri === uri) {
+        this.pty.terminate();
+      } else {
+        execution.end(false, Date.now());
+      }
     });
 
     this.executionQueue.push({
       command: commands.join("; "),
       execution,
-      uri: cell.document.uri.toString(),
-      cancelPromise,
+      uri,
     });
 
     this.runExecutionQueue();
@@ -117,7 +117,7 @@ export default class Controller {
     }
 
     const commandExecution = this.executionQueue.shift()!;
-    const { command, execution, uri, cancelPromise } = commandExecution;
+    const { command, execution, uri } = commandExecution;
 
     // Execution is already canceled
     if (execution.token.isCancellationRequested) {
@@ -143,20 +143,20 @@ export default class Controller {
       execution.appendOutput(
         new NotebookCellOutput([
           NotebookCellOutputItem.json(json, mime),
-          // NotebookCellOutputItem.text(data),
+          // NotebookCellOutputItem.text(data), TODO
         ])
       );
     };
 
-    const { promise, terminate } = this.pty.writeCommand(command, onData);
-
-    cancelPromise.then(terminate);
-
-    promise
-      .then(() => {
+    this.pty
+      .writeCommand(command, onData)
+      .then((result) => {
+        console.log(result.cwd); // TODO
         execution.end(true, Date.now());
+        return result;
       })
-      .catch(() => {
+      .catch((result) => {
+        console.log(result.cwd); // TODO
         execution.end(false, Date.now());
       })
       .finally(() => {
