@@ -3,5 +3,10 @@
     "compilerOptions": {
         "rootDir": ".",
         "module": "ES2020"
-    }
+    },
+    "references": [
+        {
+            "path": "../common"
+        }
+    ]
 }

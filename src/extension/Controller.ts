@@ -7,9 +7,9 @@ import {
   NotebookDocument,
   notebooks,
 } from "vscode";
-import { getChildrenForPPID } from "./ps";
 import { getShell } from "./Options";
 import Pty from "./Pty";
+import RenderCommand from "../common/RenderCommand";
 
 const mime = "x-application/bashbook";
 const controllerId = "bashbook-controller";
@@ -45,12 +45,6 @@ export default class Controller {
     console.debug(`Spawning shell '${shell}'`);
 
     this.pty = new Pty(shell);
-
-    console.debug("pty pid", this.pty.pid);
-
-    getChildrenForPPID(this.pty.pid).then((pids) => {
-      console.debug("child pids at constructor", pids);
-    });
   }
 
   dispose() {
@@ -126,19 +120,20 @@ export default class Controller {
     }
 
     this.isExecuting = commandExecution;
-    let create = true;
+    let firstCommand = true;
 
     const onData = (data: string) => {
       if (execution.token.isCancellationRequested) {
         return;
       }
 
-      getChildrenForPPID(this.pty.pid).then((pids) => {
-        console.debug("child pids at onData", pids);
-      });
-
-      const json = { uri, data, create };
-      create = false;
+      const json: RenderCommand = {
+        uri,
+        data,
+        firstCommand,
+        lastCommand: false,
+      };
+      firstCommand = false;
 
       execution.appendOutput(
         new NotebookCellOutput([
@@ -148,16 +143,31 @@ export default class Controller {
       );
     };
 
+    const end = (success: boolean) => {
+      if (!firstCommand) {
+        const json: RenderCommand = {
+          uri,
+          firstCommand: false,
+          lastCommand: true,
+        };
+        execution.appendOutput(
+          new NotebookCellOutput([NotebookCellOutputItem.json(json, mime)])
+        );
+      }
+
+      execution.end(success, Date.now());
+    };
+
     this.pty
       .writeCommand(command, onData)
       .then((result) => {
         console.log(result.cwd); // TODO
-        execution.end(true, Date.now());
+        end(true);
         return result;
       })
       .catch((result) => {
         console.log(result.cwd); // TODO
-        execution.end(false, Date.now());
+        end(false);
       })
       .finally(() => {
         this.isExecuting = undefined;

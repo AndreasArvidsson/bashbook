@@ -42,12 +42,19 @@ export default class Pty {
   writeCommand(command: string, onData: (data: string) => void) {
     return new Promise<Result>((resolve, reject) => {
       let waitingForCommand = true;
+      let firstData = true;
 
       const disposable = this.pty.onData((data) => {
         // Don't print command when it's echoed back
         if (waitingForCommand) {
           waitingForCommand = false;
           return;
+        }
+
+        // Remove leading new line
+        if (firstData) {
+          firstData = false;
+          data = data.replace(/^\r\n/, "");
         }
 
         const uuidIndex = data.indexOf(UUID);
@@ -60,7 +67,10 @@ export default class Pty {
 
           // There is data before the prompt
           if (uuidIndex > 0) {
-            onData(data.substring(0, uuidIndex));
+            // Remove trailing new line
+            const d = data.substring(0, uuidIndex).replace(/\r\n$/, "");
+            // const d = data.substring(0, uuidIndex); // TODO
+            onData(d);
           }
 
           disposable.dispose();

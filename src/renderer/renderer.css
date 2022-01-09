@@ -5,3 +5,11 @@
 .xterm-rows {
   color: var(--theme-foreground) !important;
 }
+
+.xterm-rows .xterm-cursor.xterm-cursor-bar {
+  box-shadow: 1px 0 0 var(--vscode-editorCursor-foreground) inset !important;
+}
+
+.xterm-rows .xterm-cursor.xterm-cursor-underline {
+  box-shadow: none !important;
+}

@@ -1,6 +1,7 @@
 import type { ActivationFunction } from "vscode-notebook-renderer";
 import { Terminal } from "xterm";
 import "xterm/css/xterm.css";
+import RenderCommand from "../common/RenderCommand";
 import "./renderer.css";
 
 interface TerminalState {
@@ -19,6 +20,7 @@ export const activate: ActivationFunction = (context) => {
       rendererType: "dom",
       cols: COLS,
       rows: 1,
+      cursorStyle: "bar",
     });
 
     if (context.postMessage) {
@@ -37,29 +39,40 @@ export const activate: ActivationFunction = (context) => {
     const has = map.has(uri);
     if (create || !has) {
       if (has) {
-        const state = map.get(uri)!;
-        state.content = "";
-        state.term.clear();
-        state.term.open(element);
-      } else {
-        const term = createTerminal(uri);
-        term.open(element);
-        map.set(uri, { term, content: "" });
+        map.get(uri)!.term.dispose();
       }
+
+      const term = createTerminal(uri);
+      term.open(element);
+      map.set(uri, { term, content: "" });
     }
     return map.get(uri)!;
   };
 
   return {
     renderOutputItem(outputItem, element) {
-      const { uri, data, create } = outputItem.json();
-      const state = getTerminal(uri, create, element);
-      state.term.write(data);
-      state.content += data;
-      const lines = state.content.split("\n");
-      const rows = Math.min(ROWS_MAX, lines.length);
-      if (state.term.rows !== rows) {
-        state.term.resize(COLS, rows);
+      const { uri, data, firstCommand, lastCommand }: RenderCommand =
+        outputItem.json();
+
+      // if (firstCommand && lastCommand) {
+      //   return;
+      // }
+
+      const state = getTerminal(uri, firstCommand, element);
+
+      if (data != null) {
+        state.term.write(data);
+        state.content += data;
+        const lines = state.content.split("\n");
+        const rows = Math.min(ROWS_MAX, lines.length);
+        if (state.term.rows !== rows) {
+          state.term.resize(COLS, rows);
+        }
+      }
+
+      // Execution is over. Hide cursor.
+      if (lastCommand) {
+        state.term.options.cursorStyle = "underline";
       }
     },
   };
