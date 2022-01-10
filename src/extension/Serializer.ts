@@ -2,21 +2,32 @@ import { TextDecoder, TextEncoder } from "util";
 import {
   CancellationToken,
   NotebookCellData,
+  NotebookCellExecutionSummary,
   NotebookCellKind,
+  NotebookCellOutput,
+  NotebookCellOutputItem,
   NotebookData,
   NotebookSerializer,
 } from "vscode";
 
-interface RawNotebook {
-  cells: RawNotebookCell[];
-  // metadata: { [key: string]: any };
-}
+type Metadata = { [key: string]: any };
 
-interface RawNotebookCell {
-  kind: NotebookCellKind;
-  languageId: string;
-  value: string;
-  // metadata: { [key: string]: any };
+interface RawNotebook {
+  metadata?: Metadata;
+  cells: {
+    kind: NotebookCellKind;
+    value: string;
+    languageId: string;
+    metadata?: Metadata;
+    executionSummary?: NotebookCellExecutionSummary;
+    outputs?: {
+      metadata?: Metadata;
+      items: {
+        mime: string;
+        data: string;
+      }[];
+    }[];
+  }[];
 }
 
 export default class Serializer implements NotebookSerializer {
@@ -32,18 +43,36 @@ export default class Serializer implements NotebookSerializer {
     } catch {
       raw = {
         cells: [],
-        // metadata: {},
       };
     }
 
-    const cells = raw.cells.map((item) => {
-      const cell = new NotebookCellData(item.kind, item.value, item.languageId);
-      // cell.metadata = item.metadata;
-      return cell;
-    });
+    const notebook = new NotebookData(
+      raw.cells.map((item) => {
+        const cell = new NotebookCellData(
+          item.kind,
+          item.value,
+          item.languageId
+        );
+        cell.metadata = item.metadata;
+        cell.executionSummary = item.executionSummary;
+        cell.outputs = item.outputs?.map(
+          (output) =>
+            new NotebookCellOutput(
+              output.items.map(
+                (item) =>
+                  new NotebookCellOutputItem(
+                    new TextEncoder().encode(item.data),
+                    item.mime
+                  )
+              ),
+              output.metadata
+            )
+        );
+        return cell;
+      })
+    );
+    notebook.metadata = raw.metadata;
 
-    const notebook = new NotebookData(cells);
-    // notebook.metadata = raw.metadata;
     return notebook;
   }
 
@@ -52,12 +81,21 @@ export default class Serializer implements NotebookSerializer {
     _token: CancellationToken
   ): Promise<Uint8Array> {
     const contents: RawNotebook = {
-      // metadata: data.metadata ?? {},
+      metadata: data.metadata,
       cells: data.cells.map((cell) => ({
         kind: cell.kind,
         languageId: cell.languageId,
         value: cell.value,
-        // metadata: cell.metadata ?? {},
+        metadata: cell.metadata,
+        // executionSummary: cell.executionSummary,
+        // TODO
+        // outputs: cell.outputs?.map((output) => ({
+        //   metadata: output.metadata,
+        //   items: output.items.map((item) => ({
+        //     mime: item.mime,
+        //     data: new TextDecoder().decode(item.data),
+        //   })),
+        // })),
       })),
     };
 
