@@ -5,6 +5,8 @@ import {
   Disposable,
   DocumentSelector,
   languages,
+  Position,
+  TextDocument,
 } from "vscode";
 import { LANGUAGE } from "./Constants";
 import { readHistory } from "./history";
@@ -13,30 +15,38 @@ const selector: DocumentSelector = { language: LANGUAGE };
 
 export class HistoryCompletionItemProvider implements CompletionItemProvider {
   static readonly triggerCharacters = [];
-  private result: CompletionItem[] = [];
+  private history: CompletionItem[] = [];
   private map = new Map<string, CompletionItem>();
   private nextIndex = Number.MAX_SAFE_INTEGER;
 
   constructor() {
-    this.push = this.push.bind(this);
+    this.historyPush = this.historyPush.bind(this);
 
     readHistory().then((history) => {
-      history.forEach(this.push);
+      history.forEach(this.historyPush);
     });
   }
 
-  provideCompletionItems() {
-    return this.result;
+  provideCompletionItems(document: TextDocument, position: Position) {
+    let text = document
+      .lineAt(position.line)
+      .text.substring(0, position.character);
+
+    const historyResult = text
+      ? this.history.filter(({ label }) => (<string>label).startsWith(text))
+      : this.history;
+
+    return historyResult;
   }
 
-  push(value: string) {
+  historyPush(value: string) {
     if (!this.map.has(value)) {
       const item = {
         label: value,
         kind: CompletionItemKind.Text,
       };
       this.map.set(value, item);
-      this.result.push(item);
+      this.history.push(item);
     }
     this.map.get(value)!.sortText = `${--this.nextIndex}`;
   }
@@ -52,6 +62,6 @@ export function registerLanguageProvider() {
         ...HistoryCompletionItemProvider.triggerCharacters
       )
     ),
-    historyPush: historyCompletionItemProvider.push,
+    historyPush: historyCompletionItemProvider.historyPush,
   };
 }
