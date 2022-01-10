@@ -5,7 +5,6 @@ import "./Terminal.css";
 
 const DEFAULT_OPTIONS = {
   rendererType: "dom",
-  cursorStyle: "bar",
   rows: 1,
 };
 

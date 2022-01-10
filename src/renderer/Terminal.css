@@ -4,18 +4,38 @@
   padding-right: 0 !important;
 }
 
+/* Background color */
 .xterm-viewport {
   background-color: var(--theme-background) !important;
 }
 
+/* Text color */
 .xterm-rows {
   color: var(--theme-foreground) !important;
 }
 
+/* Bar cursor un-focus */
 .xterm-rows .xterm-cursor.xterm-cursor-bar {
+  box-shadow: 1px 0 0 var(--vscode-notebook-inactiveFocusedCellBorder) inset !important;
+}
+
+/* Bar cursor focus */
+.xterm-rows.xterm-focus .xterm-cursor.xterm-cursor-bar {
   box-shadow: 1px 0 0 var(--vscode-editorCursor-foreground) inset !important;
 }
 
+/* Block cursor un-focus */
+.xterm-rows .xterm-cursor.xterm-cursor-block {
+  outline: 1px solid var(--vscode-editorCursor-foreground) !important;
+}
+
+/* Block cursor focus */
+.xterm-rows.xterm-focus .xterm-cursor.xterm-cursor-block {
+  background-color: var(--vscode-editorCursor-foreground) !important;
+  color: var(--theme-background) !important;
+}
+
+/* Underline cursor. Used as a none/hidden cursor */
 .xterm-rows .xterm-cursor.xterm-cursor-underline {
   box-shadow: none !important;
 }
