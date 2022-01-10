@@ -14,7 +14,12 @@ export const activate: ActivationFunction = (context) => {
     context.postMessage!(message);
   };
 
-  const createTerminal = (uri: string, cols: number, element: HTMLElement) => {
+  const createTerminal = (
+    notebookUri: string,
+    cellUri: string,
+    cols: number,
+    element: HTMLElement
+  ) => {
     const term = new Terminal({
       cols,
     });
@@ -22,7 +27,8 @@ export const activate: ActivationFunction = (context) => {
     term.onInput((data) => {
       postMessage({
         type: "data",
-        uri,
+        notebookUri,
+        cellUri,
         data,
       });
     });
@@ -33,25 +39,25 @@ export const activate: ActivationFunction = (context) => {
   };
 
   const onDataMessage = (
-    { uri, data, cols, firstCommand }: OutputMessageData,
+    { notebookUri, cellUri, data, cols, firstCommand }: OutputMessageData,
     element: HTMLElement
   ) => {
     if (firstCommand) {
-      if (uriMap.has(uri)) {
-        uriMap.get(uri)!.dispose();
+      if (uriMap.has(cellUri)) {
+        uriMap.get(cellUri)!.dispose();
       }
-      uriMap.set(uri, createTerminal(uri, cols, element));
+      uriMap.set(cellUri, createTerminal(notebookUri, cellUri, cols, element));
     }
-    const term = uriMap.get(uri)!;
+    const term = uriMap.get(cellUri)!;
 
     term.writeData(data);
   };
 
   const onFinishedMessage = (
-    { uri }: OutputMessageFinished,
+    { notebookUri, cellUri }: OutputMessageFinished,
     element: HTMLElement
   ) => {
-    const term = uriMap.get(uri)!;
+    const term = uriMap.get(cellUri)!;
 
     term.open(element);
 
@@ -63,6 +69,7 @@ export const activate: ActivationFunction = (context) => {
     if (cols && term.cols !== cols) {
       postMessage({
         type: "setCols",
+        notebookUri,
         cols,
       });
     }
@@ -70,7 +77,6 @@ export const activate: ActivationFunction = (context) => {
 
   const renderOutputItem = (outputItem: OutputItem, element: HTMLElement) => {
     const message: OutputMessage = outputItem.json();
-
     switch (message.type) {
       case "data":
         onDataMessage(message, element);

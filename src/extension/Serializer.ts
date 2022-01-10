@@ -7,7 +7,9 @@ import {
   NotebookCellOutputItem,
   NotebookData,
   NotebookSerializer,
+  workspace,
 } from "vscode";
+import { NOTEBOOK_TYPE } from "./Constants";
 
 type Metadata = { [key: string]: any };
 
@@ -29,7 +31,7 @@ interface RawNotebook {
   }[];
 }
 
-export default class Serializer implements NotebookSerializer {
+class Serializer implements NotebookSerializer {
   async deserializeNotebook(content: Uint8Array): Promise<NotebookData> {
     const contents = new TextDecoder().decode(content);
 
@@ -94,4 +96,10 @@ export default class Serializer implements NotebookSerializer {
 
     return new TextEncoder().encode(JSON.stringify(contents));
   }
+}
+
+export function registerSerializer() {
+  return workspace.registerNotebookSerializer(NOTEBOOK_TYPE, new Serializer(), {
+    transientOutputs: true,
+  });
 }

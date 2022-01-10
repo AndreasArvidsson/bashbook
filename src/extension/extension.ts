@@ -3,31 +3,36 @@ import { ExtensionMessage } from "../common/ExtensionMessage";
 import { registerCommands } from "./commands";
 import { registerLanguageProvider } from "./languageProvider";
 import Controller from "./Controller";
-import Serializer from "./Serializer";
-import { NOTEBOOK_TYPE, RENDERER_ID } from "./Constants";
+import { registerSerializer } from "./Serializer";
+import { RENDERER_ID } from "./Constants";
+import { Graph } from "./types";
 
 export function activate(context: vscode.ExtensionContext) {
-  context.subscriptions.push(registerCommands());
-
-  context.subscriptions.push(
-    vscode.workspace.registerNotebookSerializer(
-      NOTEBOOK_TYPE,
-      new Serializer(),
-      {
-        transientOutputs: true,
-      }
-    )
-  );
-
   const {
     disposable: languageDisposable,
     historyPush,
     setCWD,
   } = registerLanguageProvider();
-  context.subscriptions.push(languageDisposable);
 
-  const controller = new Controller(historyPush, setCWD);
-  context.subscriptions.push(controller);
+  const graph: Graph = {
+    historyPush,
+    setCWD,
+  };
+
+  const controller = new Controller(graph);
+
+  context.subscriptions.push(
+    languageDisposable,
+    controller,
+    registerSerializer(),
+    registerCommands(),
+    vscode.workspace.onDidOpenNotebookDocument(
+      controller.onDidOpenNotebookDocument
+    ),
+    vscode.workspace.onDidCloseNotebookDocument(
+      controller.onDidCloseNotebookDocument
+    )
+  );
 
   const messageChannel = vscode.notebooks.createRendererMessaging(RENDERER_ID);
 
@@ -36,10 +41,10 @@ export function activate(context: vscode.ExtensionContext) {
       const message: ExtensionMessage = e.message;
       switch (message.type) {
         case "data":
-          controller.onData(message.uri, message.data);
+          controller.onData(message.notebookUri, message.cellUri, message.data);
           break;
         case "setCols":
-          controller.setCols(message.cols);
+          controller.setCols(message.notebookUri, message.cols);
           break;
       }
     })

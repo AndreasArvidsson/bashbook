@@ -1,6 +1,7 @@
 export interface OutputMessageData {
   type: "data";
-  uri: string;
+  notebookUri: string;
+  cellUri: string;
   data: string;
   cols: number;
   firstCommand: boolean;
@@ -8,7 +9,8 @@ export interface OutputMessageData {
 
 export interface OutputMessageFinished {
   type: "finished";
-  uri: string;
+  notebookUri: string;
+  cellUri: string;
 }
 
 export type OutputMessage = OutputMessageData | OutputMessageFinished;

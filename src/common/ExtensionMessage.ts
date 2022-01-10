@@ -1,11 +1,13 @@
 export interface ExtensionMessageData {
   type: "data";
-  uri: string;
+  notebookUri: string;
+  cellUri: string;
   data: string;
 }
 
 export interface ExtensionMessageSetCols {
   type: "setCols";
+  notebookUri: string;
   cols: number;
 }
 
