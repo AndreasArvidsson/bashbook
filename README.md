@@ -17,16 +17,39 @@ Notebook for running bash/shell script
 - `bashbook.newNotebook`  
    Create new Bash notebook
 
-## Build dependencies
+## Information
 
-## Build local
+### One shell per notebook
+
+Each notebook is running one continuous shell. This means that commands running in one cell will effect the others. Only one execution is allowed at the time. Rest is queued.
+
+### Interactive terminal (prompt)
+
+Interaction with running execution is possible in the output terminal. Finished executions are non-interactive.
+
+### Resize
+
+- Resize terminal height to fit content dynamically
+- Resize terminal width at end of execution. Only affects next execution.
+
+### Current Working Directory(CWD)
+
+Tries to set CWD in following order
+
+1. File directory
+1. Workspace directory
+1. User home directory
+
+## Build details
+
+### Build local
 
 ```
 npm install
 npm run compile
 ```
 
-## Components
+### Components
 
 - node-pty
 - xterm.js
