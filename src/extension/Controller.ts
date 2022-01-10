@@ -32,8 +32,10 @@ export default class Controller {
   }
 
   onDidOpenNotebookDocument(document: vscode.NotebookDocument) {
-    const uri = document.uri.toString();
-    this.notebooks.set(uri, new Notebook(this.graph, uri));
+    this.notebooks.set(
+      document.uri.toString(),
+      new Notebook(this.graph, document.uri)
+    );
   }
 
   onDidCloseNotebookDocument(document: vscode.NotebookDocument) {

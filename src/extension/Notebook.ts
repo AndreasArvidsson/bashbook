@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as os from "os";
 import { getShell } from "./Options";
 import Pty from "./Pty";
 import {
@@ -10,6 +9,7 @@ import ansiRegex from "./ansiRegex";
 import { MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
 import updateCommand from "./updateCommand";
 import { Graph } from "./types";
+import notebookDirectory from "./notebookDirectory";
 
 interface CommandExecution {
   command: string;
@@ -18,16 +18,19 @@ interface CommandExecution {
 }
 
 export default class Notebook {
-  private executionQueue: CommandExecution[] = [];
+  private readonly executionQueue: CommandExecution[] = [];
+  private readonly notebookUri;
+  private readonly pty;
   private isExecuting?: CommandExecution;
   private executionOrder = 0;
-  private pty;
 
-  constructor(private graph: Graph, private notebookUri: string) {
-    const cwd = process.env.HOME ?? os.homedir();
+  constructor(private graph: Graph, notebookUri: vscode.Uri) {
+    this.notebookUri = notebookUri.toString();
     const shell = getShell();
+    const cwd = notebookDirectory(notebookUri);
 
-    console.debug(`Spawning shell '${shell}'`);
+    console.debug(`Spawning shell: '${shell}'`);
+    console.debug(`@ CWD '${cwd}'`);
 
     this.graph.setCWD(cwd);
     this.pty = new Pty(shell, cwd);
