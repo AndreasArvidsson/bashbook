@@ -1,4 +1,4 @@
-/* calcTermCols() can't determine padding TODO */
+/* calcTermCols() can't determine padding */
 .output_container > div {
   padding-left: 0 !important;
   padding-right: 0 !important;
@@ -9,9 +9,12 @@
   background-color: var(--theme-background) !important;
 }
 
-/* Text color */
+/* Style row text */
 .xterm-rows {
   color: var(--theme-foreground) !important;
+  font-family: var(--theme-code-font-family) !important;
+  font-weight: var(--theme-code-font-weight) !important;
+  font-size: var(--theme-code-font-size) !important;
 }
 
 /* Bar cursor un-focus */
