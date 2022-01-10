@@ -1,6 +1,7 @@
 import { NotebookCell, NotebookCellExecution } from "vscode";
 import { OutputMessage } from "../common/OutputMessage";
 import ansiRegex from "./ansiRegex";
+import { MIME_PLAINTEXT } from "./Constants";
 
 const regex = /(\$:\d*)/g;
 
@@ -57,13 +58,12 @@ function cellToString(cell: NotebookCell) {
       `Can't use output from failed execution [${cell.executionSummary?.executionOrder}]`
     );
   }
+
   const data: string[] = [];
   cell.outputs.forEach((output) =>
     output.items.forEach((item) => {
-      const jsonBytesToString = String.fromCharCode(...item.data);
-      const json: OutputMessage = JSON.parse(jsonBytesToString);
-      if (json.type === "data") {
-        data.push(json.data);
+      if (item.mime === MIME_PLAINTEXT) {
+        data.push(String.fromCharCode(...item.data));
       }
     })
   );

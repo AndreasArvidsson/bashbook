@@ -14,8 +14,8 @@ import {
 } from "../common/OutputMessage";
 import updateCommand from "./updateCommand";
 import ansiRegex from "./ansiRegex";
+import { MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
 
-const mime = "x-application/bashbook";
 const controllerId = "bashbook-controller";
 const notebookType = "bashbook";
 const label = "BashBook";
@@ -158,7 +158,9 @@ export default class Controller {
 
       dataParts.push(data.replace(ansiRegex, ""));
       execution.appendOutput(
-        new NotebookCellOutput([NotebookCellOutputItem.json(json, mime)])
+        new NotebookCellOutput([
+          NotebookCellOutputItem.json(json, MIME_BASHBOOK),
+        ])
       );
     };
 
@@ -170,8 +172,8 @@ export default class Controller {
         };
         execution.replaceOutput(
           new NotebookCellOutput([
-            NotebookCellOutputItem.json(json, mime),
-            NotebookCellOutputItem.text(dataParts.join("\n")),
+            NotebookCellOutputItem.json(json, MIME_BASHBOOK),
+            NotebookCellOutputItem.text(dataParts.join("\n"), MIME_PLAINTEXT),
           ])
         );
       }
