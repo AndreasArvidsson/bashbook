@@ -8,7 +8,11 @@ A notebook for bash. Run shell script in notebook cells.
 
 - `ctrl+backspace`  
    `bashbook.cell.executeAndClear`  
-   Execute Cell and clear content
+   Execute cell and clear content
+
+- `shift+backspace`
+  `bashbook.cell.clearAndEdit`  
+   Clear cell content and edit
 
 ## Components
 

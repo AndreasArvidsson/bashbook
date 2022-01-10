@@ -2,6 +2,10 @@ import { commands, Disposable, window, Range } from "vscode";
 
 const executeAndClear = async () => {
   await commands.executeCommand("notebook.cell.executeAndFocusContainer");
+  await clearAndEdit();
+};
+
+const clearAndEdit = async () => {
   await commands.executeCommand("notebook.cell.edit");
   const editor = window.activeTextEditor;
   await editor?.edit((editBuilder) => {
@@ -13,6 +17,7 @@ const executeAndClear = async () => {
 
 export function registerCommands() {
   return Disposable.from(
-    commands.registerCommand("bashbook.cell.executeAndClear", executeAndClear)
+    commands.registerCommand("bashbook.cell.executeAndClear", executeAndClear),
+    commands.registerCommand("bashbook.cell.clearAndEdit", clearAndEdit)
   );
 }

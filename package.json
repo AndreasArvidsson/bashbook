@@ -20,7 +20,12 @@
         "commands": [
             {
                 "command": "bashbook.cell.executeAndClear",
-                "title": "BashBook: Execute Cell and clear content",
+                "title": "BashBook: Execute cell and clear content",
+                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+            },
+            {
+                "command": "bashbook.cell.clearAndEdit",
+                "title": "BashBook: Clear cell content and edit",
                 "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
             }
         ],
@@ -28,6 +33,11 @@
             {
                 "command": "bashbook.cell.executeAndClear",
                 "key": "ctrl+backspace",
+                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+            },
+            {
+                "command": "bashbook.cell.clearAndEdit",
+                "key": "shift+backspace",
                 "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
             }
         ],
