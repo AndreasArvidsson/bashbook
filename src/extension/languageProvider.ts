@@ -14,17 +14,14 @@ const selector: DocumentSelector = { language: LANGUAGE };
 export class HistoryCompletionItemProvider implements CompletionItemProvider {
   static readonly triggerCharacters = [];
   private result: CompletionItem[] = [];
+  private map = new Map<string, CompletionItem>();
+  private nextIndex = Number.MAX_SAFE_INTEGER;
 
   constructor() {
     this.push = this.push.bind(this);
 
     readHistory().then((history) => {
-      history.forEach((value) => {
-        this.result.push({
-          label: value,
-          kind: CompletionItemKind.Text,
-        });
-      });
+      history.forEach(this.push);
     });
   }
 
@@ -33,10 +30,15 @@ export class HistoryCompletionItemProvider implements CompletionItemProvider {
   }
 
   push(value: string) {
-    this.result.push({
-      label: value,
-      kind: CompletionItemKind.Text,
-    });
+    if (!this.map.has(value)) {
+      const item = {
+        label: value,
+        kind: CompletionItemKind.Text,
+      };
+      this.map.set(value, item);
+      this.result.push(item);
+    }
+    this.map.get(value)!.sortText = `${--this.nextIndex}`;
   }
 }
 
