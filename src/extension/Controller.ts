@@ -6,6 +6,7 @@ import {
   NotebookController,
   notebooks,
 } from "vscode";
+import * as os from "os";
 import {
   OutputMessageData,
   OutputMessageFinished,
@@ -38,7 +39,10 @@ export default class Controller {
   private executionOrder = 0;
   private pty;
 
-  constructor(private historyPush: (value: string) => void) {
+  constructor(
+    private historyPush: (value: string) => void,
+    private setCWD: (cwd: string) => void
+  ) {
     this.controller = notebooks.createNotebookController(
       CONTROLLER_ID,
       NOTEBOOK_TYPE,
@@ -48,10 +52,13 @@ export default class Controller {
     this.controller.supportsExecutionOrder = true;
     this.controller.executeHandler = this.executeHandler.bind(this);
 
+    const cwd = process.env.HOME ?? os.homedir();
     const shell = getShell();
+
     console.debug(`Spawning shell '${shell}'`);
 
-    this.pty = new Pty(shell);
+    this.setCWD(cwd);
+    this.pty = new Pty(shell, cwd);
   }
 
   dispose() {
@@ -170,7 +177,7 @@ export default class Controller {
       );
     };
 
-    const end = (success: boolean) => {
+    const end = (success: boolean, cwd: string) => {
       if (!firstCommand) {
         const json: OutputMessageFinished = {
           type: "finished",
@@ -188,6 +195,7 @@ export default class Controller {
       }
 
       execution.end(success, Date.now());
+      this.setCWD(cwd);
       this.isExecuting = undefined;
       this.runExecutionQueue();
     };
@@ -195,12 +203,10 @@ export default class Controller {
     this.pty
       .writeCommand(updatedCommand, onData)
       .then((result) => {
-        console.log(result.cwd); // TODO
-        end(true);
+        end(true, result.cwd);
       })
       .catch((result) => {
-        console.log(result.cwd); // TODO
-        end(false);
+        end(false, result.cwd);
       });
   }
 }

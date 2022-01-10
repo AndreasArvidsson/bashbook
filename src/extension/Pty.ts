@@ -14,12 +14,12 @@ export default class Pty {
   public pid: number;
   private pty: IPty;
 
-  constructor(shell: string) {
+  constructor(shell: string, cwd: string) {
     this.pty = spawn(shell, [], {
       name: "xterm-color",
       cols: 80,
       rows: ROWS,
-      cwd: process.env.HOME,
+      cwd,
       env: <{ [key: string]: string }>process.env,
     });
 

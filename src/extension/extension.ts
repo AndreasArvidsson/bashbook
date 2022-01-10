@@ -15,11 +15,14 @@ export function activate(context: ExtensionContext) {
     })
   );
 
-  const { disposable: languageDisposable, historyPush } =
-    registerLanguageProvider();
+  const {
+    disposable: languageDisposable,
+    historyPush,
+    setCWD,
+  } = registerLanguageProvider();
   context.subscriptions.push(languageDisposable);
 
-  const controller = new Controller(historyPush);
+  const controller = new Controller(historyPush, setCWD);
   context.subscriptions.push(controller);
 
   const messageChannel = notebooks.createRendererMessaging(RENDERER_ID);
