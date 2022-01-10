@@ -14,12 +14,12 @@ import {
 } from "../common/OutputMessage";
 import updateCommand from "./updateCommand";
 import ansiRegex from "./ansiRegex";
-import { MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
+import { LANGUAGE, MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
 
 const controllerId = "bashbook-controller";
 const notebookType = "bashbook";
 const label = "BashBook";
-const supportedLanguages = ["shellscript"];
+const supportedLanguages = [LANGUAGE];
 
 interface CommandExecution {
   command: string;
@@ -33,14 +33,15 @@ export default class Controller {
   private isExecuting?: CommandExecution;
   private executionOrder = 0;
   private pty;
+  private historyPush: (value: string) => void;
 
-  constructor() {
+  constructor(historyPush: (value: string) => void) {
+    this.historyPush = historyPush;
     this.controller = notebooks.createNotebookController(
       controllerId,
       notebookType,
       label
     );
-
     this.controller.supportedLanguages = supportedLanguages;
     this.controller.supportsExecutionOrder = true;
     this.controller.executeHandler = this.executeHandler.bind(this);
@@ -100,12 +101,15 @@ export default class Controller {
       }
     });
 
+    const command = commands.join("; ");
+
     this.executionQueue.push({
-      command: commands.join("; "),
+      command,
       execution,
       uri,
     });
 
+    this.historyPush(command);
     this.runExecutionQueue();
   }
 

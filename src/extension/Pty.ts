@@ -22,6 +22,10 @@ export default class Pty {
       env: <{ [key: string]: string }>process.env,
     });
 
+    this.pty.onExit(() => {
+      console.debug("Exit");
+    });
+
     this.pid = this.pty.pid;
 
     // Set PS1/prompt

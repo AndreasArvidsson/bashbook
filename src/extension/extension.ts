@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { ExtensionMessage } from "../common/ExtensionMessage";
 import Controller from "./Controller";
 import Serializer from "./Serializer";
+import { registerLanguageProvider } from "./languageProvider";
 
 export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
@@ -10,7 +11,11 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  const controller = new Controller();
+  const { disposable: languageDisposable, historyPush } =
+    registerLanguageProvider();
+  context.subscriptions.push(languageDisposable);
+
+  const controller = new Controller(historyPush);
   context.subscriptions.push(controller);
 
   const messageChannel =
