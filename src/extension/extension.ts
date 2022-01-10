@@ -4,12 +4,13 @@ import { registerCommands } from "./commands";
 import { registerLanguageProvider } from "./languageProvider";
 import Controller from "./Controller";
 import Serializer from "./Serializer";
+import { NOTEBOOK_TYPE, RENDERER_ID } from "./Constants";
 
 export function activate(context: ExtensionContext) {
   context.subscriptions.push(registerCommands());
 
   context.subscriptions.push(
-    workspace.registerNotebookSerializer("bashbook", new Serializer(), {
+    workspace.registerNotebookSerializer(NOTEBOOK_TYPE, new Serializer(), {
       transientOutputs: true,
     })
   );
@@ -21,7 +22,7 @@ export function activate(context: ExtensionContext) {
   const controller = new Controller(historyPush);
   context.subscriptions.push(controller);
 
-  const messageChannel = notebooks.createRendererMessaging("bashbook-renderer");
+  const messageChannel = notebooks.createRendererMessaging(RENDERER_ID);
 
   context.subscriptions.push(
     messageChannel.onDidReceiveMessage((e) => {

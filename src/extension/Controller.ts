@@ -6,19 +6,23 @@ import {
   NotebookController,
   notebooks,
 } from "vscode";
-import { getShell } from "./Options";
-import Pty from "./Pty";
 import {
   OutputMessageData,
   OutputMessageFinished,
 } from "../common/OutputMessage";
-import updateCommand from "./updateCommand";
+import { getShell } from "./Options";
+import Pty from "./Pty";
 import ansiRegex from "./ansiRegex";
-import { LANGUAGE, MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
+import updateCommand from "./updateCommand";
+import {
+  CONTROLLER_ID,
+  LANGUAGE,
+  MIME_BASHBOOK,
+  MIME_PLAINTEXT,
+  NOTEBOOK_LABEL,
+  NOTEBOOK_TYPE,
+} from "./Constants";
 
-const controllerId = "bashbook-controller";
-const notebookType = "bashbook";
-const label = "BashBook";
 const supportedLanguages = [LANGUAGE];
 
 interface CommandExecution {
@@ -33,14 +37,12 @@ export default class Controller {
   private isExecuting?: CommandExecution;
   private executionOrder = 0;
   private pty;
-  private historyPush: (value: string) => void;
 
-  constructor(historyPush: (value: string) => void) {
-    this.historyPush = historyPush;
+  constructor(private historyPush: (value: string) => void) {
     this.controller = notebooks.createNotebookController(
-      controllerId,
-      notebookType,
-      label
+      CONTROLLER_ID,
+      NOTEBOOK_TYPE,
+      NOTEBOOK_LABEL
     );
     this.controller.supportedLanguages = supportedLanguages;
     this.controller.supportsExecutionOrder = true;
@@ -142,7 +144,7 @@ export default class Controller {
       return;
     }
 
-    const dataParts: string[] = [];
+    const plainTextData: string[] = [];
     let firstCommand = true;
 
     const onData = (data: string) => {
@@ -160,7 +162,7 @@ export default class Controller {
 
       firstCommand = false;
 
-      dataParts.push(data.replace(ansiRegex, ""));
+      plainTextData.push(data.replace(ansiRegex, ""));
       execution.appendOutput(
         new NotebookCellOutput([
           NotebookCellOutputItem.json(json, MIME_BASHBOOK),
@@ -177,12 +179,17 @@ export default class Controller {
         execution.replaceOutput(
           new NotebookCellOutput([
             NotebookCellOutputItem.json(json, MIME_BASHBOOK),
-            NotebookCellOutputItem.text(dataParts.join("\n"), MIME_PLAINTEXT),
+            NotebookCellOutputItem.text(
+              plainTextData.join("\n"),
+              MIME_PLAINTEXT
+            ),
           ])
         );
       }
 
       execution.end(success, Date.now());
+      this.isExecuting = undefined;
+      this.runExecutionQueue();
     };
 
     this.pty
@@ -190,15 +197,10 @@ export default class Controller {
       .then((result) => {
         console.log(result.cwd); // TODO
         end(true);
-        return result;
       })
       .catch((result) => {
         console.log(result.cwd); // TODO
         end(false);
-      })
-      .finally(() => {
-        this.isExecuting = undefined;
-        this.runExecutionQueue();
       });
   }
 }

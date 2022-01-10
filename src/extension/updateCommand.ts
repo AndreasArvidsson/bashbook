@@ -1,6 +1,4 @@
 import { NotebookCell, NotebookCellExecution } from "vscode";
-import { OutputMessage } from "../common/OutputMessage";
-import ansiRegex from "./ansiRegex";
 import { MIME_PLAINTEXT } from "./Constants";
 
 const regex = /(\$:\d*)/g;
@@ -72,5 +70,5 @@ function cellToString(cell: NotebookCell) {
       `No output available on execution [${cell.executionSummary?.executionOrder}]`
     );
   }
-  return data.join("\n").replace(ansiRegex, "");
+  return data.join("\n");
 }
