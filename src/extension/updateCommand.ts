@@ -72,5 +72,5 @@ function cellToString(cell: NotebookCell) {
       `No output available on execution [${cell.executionSummary?.executionOrder}]`
     );
   }
-  return data.join("\n").replace(ansiRegex(), "");
+  return data.join("\n").replace(ansiRegex, "");
 }

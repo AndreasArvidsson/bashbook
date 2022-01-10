@@ -32,32 +32,28 @@ export const activate: ActivationFunction = (context) => {
     return term;
   };
 
-  const getTerminal = (
-    uri: string,
-    cols: number,
-    create: boolean,
+  const onDataMessage = (
+    { uri, data, cols, firstCommand }: OutputMessageData,
     element: HTMLElement
   ) => {
-    if (create) {
+    if (firstCommand) {
       if (uriMap.has(uri)) {
         uriMap.get(uri)!.dispose();
       }
       uriMap.set(uri, createTerminal(uri, cols, element));
     }
-    return uriMap.get(uri)!;
-  };
-
-  const onDataMessage = (
-    { uri, data, cols, firstCommand }: OutputMessageData,
-    element: HTMLElement
-  ) => {
-    const term = getTerminal(uri, cols, firstCommand, element);
+    const term = uriMap.get(uri)!;
 
     term.writeData(data);
   };
 
-  const onFinishedMessage = ({ uri }: OutputMessageFinished) => {
+  const onFinishedMessage = (
+    { uri }: OutputMessageFinished,
+    element: HTMLElement
+  ) => {
     const term = uriMap.get(uri)!;
+
+    term.open(element);
 
     // Stop listening for keyboard inputs
     term.disableInput();
@@ -80,7 +76,7 @@ export const activate: ActivationFunction = (context) => {
         onDataMessage(message, element);
         break;
       case "finished":
-        onFinishedMessage(message);
+        onFinishedMessage(message, element);
         break;
     }
   };

@@ -1,6 +1,5 @@
 import { TextDecoder, TextEncoder } from "util";
 import {
-  CancellationToken,
   NotebookCellData,
   NotebookCellExecutionSummary,
   NotebookCellKind,
@@ -31,10 +30,7 @@ interface RawNotebook {
 }
 
 export default class Serializer implements NotebookSerializer {
-  async deserializeNotebook(
-    content: Uint8Array,
-    _token: CancellationToken
-  ): Promise<NotebookData> {
+  async deserializeNotebook(content: Uint8Array): Promise<NotebookData> {
     const contents = new TextDecoder().decode(content);
 
     let raw: RawNotebook;
@@ -76,10 +72,7 @@ export default class Serializer implements NotebookSerializer {
     return notebook;
   }
 
-  async serializeNotebook(
-    data: NotebookData,
-    _token: CancellationToken
-  ): Promise<Uint8Array> {
+  async serializeNotebook(data: NotebookData): Promise<Uint8Array> {
     const contents: RawNotebook = {
       metadata: data.metadata,
       cells: data.cells.map((cell) => ({
@@ -87,8 +80,8 @@ export default class Serializer implements NotebookSerializer {
         languageId: cell.languageId,
         value: cell.value,
         metadata: cell.metadata,
+        // TODO Store data as proper json instead of bytes
         // executionSummary: cell.executionSummary,
-        // TODO
         // outputs: cell.outputs?.map((output) => ({
         //   metadata: output.metadata,
         //   items: output.items.map((item) => ({

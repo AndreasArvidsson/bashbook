@@ -13,6 +13,7 @@ import {
   OutputMessageFinished,
 } from "../common/OutputMessage";
 import updateCommand from "./updateCommand";
+import ansiRegex from "./ansiRegex";
 
 const mime = "x-application/bashbook";
 const controllerId = "bashbook-controller";
@@ -129,7 +130,7 @@ export default class Controller {
     try {
       updatedCommand = updateCommand(command, execution);
     } catch (e) {
-      execution.appendOutput(
+      execution.replaceOutput(
         new NotebookCellOutput([NotebookCellOutputItem.error(<Error>e)])
       );
       execution.end(false, Date.now());
@@ -137,6 +138,7 @@ export default class Controller {
       return;
     }
 
+    const dataParts: string[] = [];
     let firstCommand = true;
 
     const onData = (data: string) => {
@@ -154,11 +156,9 @@ export default class Controller {
 
       firstCommand = false;
 
+      dataParts.push(data.replace(ansiRegex, ""));
       execution.appendOutput(
-        new NotebookCellOutput([
-          NotebookCellOutputItem.json(json, mime),
-          // NotebookCellOutputItem.text(data),// TODO
-        ])
+        new NotebookCellOutput([NotebookCellOutputItem.json(json, mime)])
       );
     };
 
@@ -168,8 +168,11 @@ export default class Controller {
           type: "finished",
           uri,
         };
-        execution.appendOutput(
-          new NotebookCellOutput([NotebookCellOutputItem.json(json, mime)])
+        execution.replaceOutput(
+          new NotebookCellOutput([
+            NotebookCellOutputItem.json(json, mime),
+            NotebookCellOutputItem.text(dataParts.join("\n")),
+          ])
         );
       }
 
