@@ -1,4 +1,5 @@
 import { IPty, spawn } from "node-pty";
+import { commands } from "vscode";
 
 const CTRL_C = "\x03";
 const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";
@@ -24,6 +25,7 @@ export default class Pty {
 
     this.pty.onExit(() => {
       console.debug("Exit");
+      commands.executeCommand("workbench.action.closeActiveEditor");
     });
 
     this.pid = this.pty.pid;
