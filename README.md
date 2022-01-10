@@ -1,6 +1,6 @@
 # BashBook
 
-A notebook for bash. Run shell script in notebook cells.
+Notebook for running bash/shell script
 
 **Early version. Not for public consumption yet!**
 
@@ -13,6 +13,9 @@ A notebook for bash. Run shell script in notebook cells.
 - `shift+backspace`
   `bashbook.cell.clearAndEdit`  
    Clear cell content and edit
+
+- `bashbook.newNotebook`  
+   Create new Bash notebook
 
 ## Build dependencies
 

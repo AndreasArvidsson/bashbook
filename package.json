@@ -1,16 +1,18 @@
 {
     "name": "bashbook",
     "displayName": "BashBook",
-    "description": "Notebook for bash",
+    "description": "Notebook for running bash/shell script",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.63.0"
     },
     "categories": [
-        "Other"
+        "Notebooks"
     ],
     "activationEvents": [
-        "onNotebook:bashbook"
+        "onNotebookEditor:bashbook",
+        "onNotebook:bashbook",
+        "onCommand:bashbook.newNotebook"
     ],
     "files": [
         "./out/*"
@@ -27,6 +29,10 @@
                 "command": "bashbook.cell.clearAndEdit",
                 "title": "BashBook: Clear cell content and edit",
                 "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+            },
+            {
+                "command": "bashbook.newNotebook",
+                "title": "BashBook: Create new Bash notebook"
             }
         ],
         "keybindings": [
@@ -39,6 +45,14 @@
                 "command": "bashbook.cell.clearAndEdit",
                 "key": "shift+backspace",
                 "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+            }
+        ],
+        "startEntries": [
+            {
+                "title": "BashBook",
+                "description": "Notebook for running bash/shell script",
+                "command": "bashbook.newNotebook",
+                "category": "notebook"
             }
         ],
         "configuration": {
