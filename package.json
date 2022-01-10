@@ -17,6 +17,20 @@
     ],
     "main": "./out/extension.js",
     "contributes": {
+        "commands": [
+            {
+                "command": "bashbook.cell.executeAndClear",
+                "title": "BashBook: Execute Cell and clear content",
+                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "bashbook.cell.executeAndClear",
+                "key": "ctrl+backspace",
+                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+            }
+        ],
         "configuration": {
             "title": "BashBook",
             "properties": {

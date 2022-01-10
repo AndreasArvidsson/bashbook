@@ -1,12 +1,15 @@
-import * as vscode from "vscode";
+import { ExtensionContext, notebooks, workspace } from "vscode";
 import { ExtensionMessage } from "../common/ExtensionMessage";
+import { registerCommands } from "./commands";
+import { registerLanguageProvider } from "./languageProvider";
 import Controller from "./Controller";
 import Serializer from "./Serializer";
-import { registerLanguageProvider } from "./languageProvider";
 
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: ExtensionContext) {
+  context.subscriptions.push(registerCommands());
+
   context.subscriptions.push(
-    vscode.workspace.registerNotebookSerializer("bashbook", new Serializer(), {
+    workspace.registerNotebookSerializer("bashbook", new Serializer(), {
       transientOutputs: true,
     })
   );
@@ -18,20 +21,21 @@ export function activate(context: vscode.ExtensionContext) {
   const controller = new Controller(historyPush);
   context.subscriptions.push(controller);
 
-  const messageChannel =
-    vscode.notebooks.createRendererMessaging("bashbook-renderer");
+  const messageChannel = notebooks.createRendererMessaging("bashbook-renderer");
 
-  messageChannel.onDidReceiveMessage((e) => {
-    const message: ExtensionMessage = e.message;
-    switch (message.type) {
-      case "data":
-        controller.onData(message.uri, message.data);
-        break;
-      case "setCols":
-        controller.setCols(message.cols);
-        break;
-    }
-  });
+  context.subscriptions.push(
+    messageChannel.onDidReceiveMessage((e) => {
+      const message: ExtensionMessage = e.message;
+      switch (message.type) {
+        case "data":
+          controller.onData(message.uri, message.data);
+          break;
+        case "setCols":
+          controller.setCols(message.cols);
+          break;
+      }
+    })
+  );
 }
 
 export function deactivate() {}

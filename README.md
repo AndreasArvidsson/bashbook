@@ -1,8 +1,19 @@
 # BashBook
 
-A notebook for bash
+A notebook for bash. Run shell script in notebook cells.
 
 **Early version. Not for public consumption yet!**
+
+## Commands
+
+- `ctrl+backspace`  
+   `bashbook.cell.executeAndClear`  
+   Execute Cell and clear content
+
+## Components
+
+- node-pty
+- xterm.js
 
 ## Build dependencies
 
