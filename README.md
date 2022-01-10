@@ -14,16 +14,23 @@ A notebook for bash. Run shell script in notebook cells.
   `bashbook.cell.clearAndEdit`  
    Clear cell content and edit
 
+## Build dependencies
+
+## Build local
+
+```
+npm install
+npm run compile
+```
+
 ## Components
 
 - node-pty
 - xterm.js
 
-## Build dependencies
-
 ### Rebuild node-pty with correct electron version
 
-Only necessary on windows... probably
+If you get an error `NODE_MODULE_VERSION` mismatch run the following:
 
 ```
 cd node_modules/node-pty
