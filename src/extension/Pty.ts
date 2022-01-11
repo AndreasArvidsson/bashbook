@@ -78,9 +78,13 @@ export default class Pty {
           console.error(
             `Waiting for command with data in parser buffer\n'${parser.get()}'`
           );
-          const eofIndex = parser.indexOf("\n");
-          if (eofIndex > -1) {
-            parser.advance(eofIndex + 1);
+          let countNl = waitingForCommand.split("\n").length;
+          while (countNl--) {
+            const i = parser.indexOf("\n");
+            if (i < 0) {
+              break;
+            }
+            parser.advance(i + 1);
           }
           waitingForCommand = "";
         }
