@@ -70,6 +70,21 @@ export default class Pty {
       // Don't print command when it's echoed back
       const parseCommand = () => {
         waitingForCommand = parser.match(waitingForCommand);
+
+        // We're both waiting for command and have data in the parser buffer
+        // Something has gone wrong with the parsing of the command. Probably due to control characters.
+        // Solution for now is to just treat this as data if we can't find the end of the line
+        if (waitingForCommand && !parser.isEmpty()) {
+          console.error(
+            `Waiting for command with data in parser buffer\n'${parser.get()}'`
+          );
+          const eofIndex = parser.indexOf("\n");
+          if (eofIndex > -1) {
+            parser.advance(eofIndex + 1);
+          }
+          waitingForCommand = "";
+        }
+
         if (!waitingForCommand) {
           parseCallback = parseData;
           if (!parser.isEmpty()) {
