@@ -60,9 +60,8 @@ export default class Notebook {
     const cellUri = execution.cell.document.uri.toString();
 
     execution.token.onCancellationRequested(() => {
-      if (this.isExecuting?.cellUri === cellUri) {
-        this.pty.terminate();
-      } else {
+      // This is not the executing cell. Just end execution in queue.
+      if (this.isExecuting?.cellUri !== cellUri) {
         execution.end(false, Date.now());
       }
     });
@@ -137,7 +136,7 @@ export default class Notebook {
       );
     };
 
-    const end = (success: boolean, cwd: string) => {
+    const end = (success: boolean, cwd?: string) => {
       if (!firstCommand) {
         const json: OutputMessageFinished = {
           type: "finished",
@@ -156,10 +155,26 @@ export default class Notebook {
       }
 
       execution.end(success, Date.now());
-      this.graph.setCWD(cwd);
+      if (cwd) {
+        this.graph.setCWD(cwd);
+      }
+
       this.isExecuting = undefined;
       this.runExecutionQueue();
     };
+
+    execution.token.onCancellationRequested(() => {
+      this.pty.terminate();
+      setTimeout(() => {
+        if (this.isExecuting?.cellUri === cellUri) {
+          console.debug(
+            "Execution is still running. Retry termination and end execution anyway."
+          );
+          this.pty.terminate();
+          end(false);
+        }
+      }, 1000);
+    });
 
     this.pty
       .writeCommand(updatedCommand, onData)

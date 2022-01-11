@@ -1,9 +1,12 @@
 import { IPty, spawn } from "node-pty";
 import { commands } from "vscode";
+import Parser from "./Parser";
 
 const CTRL_C = "\x03";
 const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";
 const ROWS = 30;
+
+const UUID_REGEXP = new RegExp(UUID.split("").join("\\s*\\r?\\n?"));
 
 interface Result {
   errorCode: number;
@@ -57,70 +60,82 @@ export default class Pty {
 
   writeCommand(command: string, onData: (data: string) => void) {
     return new Promise<Result>((resolve, reject) => {
+      const parser = new Parser();
       let waitingForCommand = command;
       let firstData = true;
+      let ps1State = 0;
+      let errorCode: number;
+      let cwd: string;
 
-      const disposable = this.pty.onData((data) => {
-        // Don't print command when it's echoed back
-        if (waitingForCommand) {
-          data = trimLeading(data);
-          const commonPrefixLength = commonPrefix(waitingForCommand, data);
-          data = data.substring(commonPrefixLength);
-          waitingForCommand = waitingForCommand.substring(commonPrefixLength);
-          if (!data || waitingForCommand) {
-            return;
+      // Don't print command when it's echoed back
+      const parseCommand = () => {
+        waitingForCommand = parser.match(waitingForCommand);
+        if (!waitingForCommand) {
+          parseCallback = parseData;
+          if (!parser.isEmpty()) {
+            parseCallback();
           }
         }
+      };
 
-        // Remove leading new line
+      const parseData = () => {
         if (firstData) {
           firstData = false;
-          data = trimLeading(data);
+          parser.trimLeading();
         }
 
-        const uuidIndex = data.indexOf(UUID);
-        if (uuidIndex > -1) {
-          const ps1 = trim(data.substring(uuidIndex));
-          const ps1Parts = ps1.split("|");
-          const errorCode = Number.parseInt(ps1Parts[1]);
-          const cwd = ps1Parts[2];
+        // const [bufferI, dataI] = parser.lookahead(UUID);TODO
+
+        const uuidMatch = parser.get().match(UUID_REGEXP);
+        const data = uuidMatch
+          ? parser.read(uuidMatch.index!)
+          : parser.readAll();
+
+        if (data) {
+          onData(data);
+        }
+
+        if (uuidMatch) {
+          parseCallback = parsePS1;
+          parseCallback();
+        }
+      };
+
+      const parsePS1 = () => {
+        // Each part of the PS1 ends with '|'
+        const index = parser.indexOf("|");
+        if (index < 1) {
+          return;
+        }
+        parser.trim();
+        if (ps1State === 0) {
+          parser.advance(UUID.length);
+        } else if (ps1State === 1) {
+          errorCode = Number.parseInt(parser.read(index));
+        } else {
+          cwd = parser.read(index);
           const result = { errorCode, cwd };
-
-          // There is data before the prompt
-          if (uuidIndex > 0) {
-            // Remove trailing new line
-            data = trimTrailing(data.substring(0, uuidIndex));
-            if (data) {
-              onData(data);
-            }
-          }
-
           disposable.dispose();
           if (errorCode === 0) {
             resolve(result);
           } else {
             reject(result);
           }
-        } else {
-          onData(data);
         }
+
+        parser.match("|");
+        ++ps1State;
+        parsePS1();
+      };
+
+      let parseCallback = parseCommand;
+
+      const disposable = this.pty.onData((data) => {
+        parser.append(data);
+        parseCallback();
       });
 
       this.pty.write(`${command}\r`);
     });
   }
 }
-
-function commonPrefix(a: string, b: string) {
-  let i;
-  for (i = 0; i < Math.min(a.length, b.length); ++i) {
-    if (a[i] !== b[i]) {
-      break;
-    }
-  }
-  return i;
-}
-
-const trimLeading = (data: string) => data.replace(/^(\[.+)?[\r\n]+/, "");
-const trimTrailing = (data: string) => data.replace(/[\r\n]+$/, "");
-const trim = (data: string) => data.replace(/[\r\n]+/, "");
