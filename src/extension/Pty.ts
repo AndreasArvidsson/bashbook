@@ -70,7 +70,6 @@ export default class Pty {
           if (!data || waitingForCommand) {
             return;
           }
-          console.log(data);
         }
 
         // Remove leading new line
