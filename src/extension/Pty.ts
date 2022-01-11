@@ -57,25 +57,31 @@ export default class Pty {
 
   writeCommand(command: string, onData: (data: string) => void) {
     return new Promise<Result>((resolve, reject) => {
-      let waitingForCommand = true;
+      let waitingForCommand = command;
       let firstData = true;
 
       const disposable = this.pty.onData((data) => {
         // Don't print command when it's echoed back
         if (waitingForCommand) {
-          waitingForCommand = false;
-          return;
+          data = trimLeading(data);
+          const commonPrefixLength = commonPrefix(waitingForCommand, data);
+          data = data.substring(commonPrefixLength);
+          waitingForCommand = waitingForCommand.substring(commonPrefixLength);
+          if (!data || waitingForCommand) {
+            return;
+          }
+          console.log(data);
         }
 
         // Remove leading new line
         if (firstData) {
           firstData = false;
-          data = data.replace(/^\r\n/, "");
+          data = trimLeading(data);
         }
 
         const uuidIndex = data.indexOf(UUID);
         if (uuidIndex > -1) {
-          const ps1 = data.substring(uuidIndex).replace(/\r\n/g, "");
+          const ps1 = trim(data.substring(uuidIndex));
           const ps1Parts = ps1.split("|");
           const errorCode = Number.parseInt(ps1Parts[1]);
           const cwd = ps1Parts[2];
@@ -84,7 +90,7 @@ export default class Pty {
           // There is data before the prompt
           if (uuidIndex > 0) {
             // Remove trailing new line
-            data = data.substring(0, uuidIndex).replace(/\r\n$/, "");
+            data = trimTrailing(data.substring(0, uuidIndex));
             if (data) {
               onData(data);
             }
@@ -105,3 +111,17 @@ export default class Pty {
     });
   }
 }
+
+function commonPrefix(a: string, b: string) {
+  let i;
+  for (i = 0; i < Math.min(a.length, b.length); ++i) {
+    if (a[i] !== b[i]) {
+      break;
+    }
+  }
+  return i;
+}
+
+const trimLeading = (data: string) => data.replace(/^(\[.+)?[\r\n]+/, "");
+const trimTrailing = (data: string) => data.replace(/[\r\n]+$/, "");
+const trim = (data: string) => data.replace(/[\r\n]+/, "");
