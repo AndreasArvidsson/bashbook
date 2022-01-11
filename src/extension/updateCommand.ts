@@ -70,5 +70,5 @@ function cellToString(cell: NotebookCell) {
       `No output available on execution [${cell.executionSummary?.executionOrder}]`
     );
   }
-  return data.join("\n");
+  return data.join("\n").trim();
 }

@@ -109,7 +109,7 @@ export default class Notebook {
       return;
     }
 
-    const plainTextData: string[] = [];
+    const dataChunks: string[] = [];
     let firstCommand = true;
 
     const onData = (data: string) => {
@@ -128,7 +128,7 @@ export default class Notebook {
 
       firstCommand = false;
 
-      plainTextData.push(data.replace(ansiRegex, ""));
+      dataChunks.push(data);
       execution.appendOutput(
         new vscode.NotebookCellOutput([
           vscode.NotebookCellOutputItem.json(json, MIME_BASHBOOK),
@@ -147,7 +147,7 @@ export default class Notebook {
           new vscode.NotebookCellOutput([
             vscode.NotebookCellOutputItem.json(json, MIME_BASHBOOK),
             vscode.NotebookCellOutputItem.text(
-              plainTextData.join("\n"),
+              dataChunks.join("\n").replace(ansiRegex, ""),
               MIME_PLAINTEXT
             ),
           ])

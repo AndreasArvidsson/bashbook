@@ -81,7 +81,7 @@ export default class Pty {
       const parseData = () => {
         if (firstData) {
           firstData = false;
-          parser.trimLeading();
+          parser.trimLeadingAnsiAndNl();
         }
 
         // const [bufferI, dataI] = parser.lookahead(UUID);TODO
@@ -107,7 +107,7 @@ export default class Pty {
         if (index < 1) {
           return;
         }
-        parser.trim();
+        parser.trimAnsiAndNl();
         if (ps1State === 0) {
           parser.advance(UUID.length);
         } else if (ps1State === 1) {
