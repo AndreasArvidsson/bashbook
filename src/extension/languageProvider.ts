@@ -49,7 +49,8 @@ export class BashCompletionItemProvider
       .lineAt(position.line)
       .text.substring(0, position.character);
 
-    return this.getHistory(text).concat(this.getFiles(text, position));
+    // return this.getHistory(text).concat(this.getFiles(text, position));
+    return this.getFiles(text, position, document);
   }
 
   private getHistory(text: string) {
@@ -59,7 +60,11 @@ export class BashCompletionItemProvider
       : this.history;
   }
 
-  private getFiles(text: string, position: vscode.Position) {
+  private getFiles(
+    text: string,
+    position: vscode.Position,
+    document: vscode.TextDocument
+  ) {
     // Start of line is dedicated to history
     if (position.character === 0) {
       return [];
@@ -67,19 +72,17 @@ export class BashCompletionItemProvider
 
     // File system completes from last non-whitespace token
     // TODO Handle quoted and escaped paths with white space in them
-    const index = text.lastIndexOf(" ");
-    if (index > -1) {
-      text = text.substring(index + 1);
-    }
-
+    const existingPath = findLastPath(text);
     let absPath: string;
-    if (text) {
-      if (text.startsWith("~")) {
-        absPath = path.join(os.homedir(), text.substring(1));
-      } else if (text.startsWith("/")) {
-        absPath = path.join(this.profile.getRootPath(), text.substring(1));
+    if (existingPath) {
+      // '\ ' is not a syntax that works in node
+      const pathText = existingPath.replace(/\\ /g, " ");
+      if (pathText.startsWith("~")) {
+        absPath = path.join(os.homedir(), pathText.substring(1));
+      } else if (pathText.startsWith("/")) {
+        absPath = this.profile.updateRootPath(pathText);
       } else {
-        absPath = path.resolve(this.cwd, text);
+        absPath = path.resolve(this.cwd, pathText);
       }
     } else {
       absPath = path.resolve(this.cwd);
@@ -87,18 +90,25 @@ export class BashCompletionItemProvider
 
     const files = getFilesForDirOrParent(absPath);
     const name = files.name.toLowerCase();
-    const filteredFiles = files.name
+    const filteredFiles = name
       ? files.files.filter((file) => file.toLowerCase().startsWith(name))
       : files.files;
+
+    const existingName = existingPath.split("/").pop()!;
+    const insertingRange = new vscode.Range(
+      position.translate({
+        characterDelta: -existingName.length,
+      }),
+      position
+    );
 
     // TODO
     console.log(absPath);
     console.log(filteredFiles);
 
-    return filteredFiles.map((file) => ({
-      label: file,
-      kind: vscode.CompletionItemKind.File,
-    }));
+    return filteredFiles.map((file) =>
+      createFileCompletionItem(file, insertingRange)
+    );
   }
 }
 
@@ -115,4 +125,40 @@ export function registerLanguageProvider(profile: Profile) {
     historyPush: historyCompletionItemProvider.historyPush,
     setCWD: historyCompletionItemProvider.setCWD,
   };
+}
+
+function findLastPath(text: string) {
+  // Since javascript doesn't support negative lookbehind we have to do this manually
+  const parts = text.split(" ");
+  let result = parts[parts.length - 1];
+  for (let i = parts.length - 2; i > -1; --i) {
+    if (!parts[i].endsWith("\\")) {
+      break;
+    }
+    result = parts[i] + " " + result;
+  }
+  return result;
+}
+
+function createFileCompletionItem(file: string, insertingRange: vscode.Range) {
+  const item: vscode.CompletionItem = {
+    label: file,
+    kind: vscode.CompletionItemKind.File,
+  };
+  let textLength;
+  if (file.includes(" ")) {
+    item.insertText = file.replace(/[ ]/g, "\\ ");
+    item.filterText = item.insertText;
+    textLength = item.insertText.length;
+  } else {
+    textLength = file.length;
+  }
+  item.range = {
+    inserting: insertingRange,
+    replacing: new vscode.Range(
+      insertingRange.start,
+      insertingRange.start.translate({ characterDelta: textLength })
+    ),
+  };
+  return item;
 }

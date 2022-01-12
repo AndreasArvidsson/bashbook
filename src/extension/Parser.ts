@@ -55,10 +55,10 @@ export default class Parser {
   }
 
   trimLeadingAnsiAndNl() {
-    this.buffer = this.buffer.replace(/^(\[\d*[A-Z]{1})?\r?\n?/, "");
+    this.buffer = this.buffer.replace(/^(\[\d*[A-Z])?\r?\n?/, "");
   }
 
   trimAnsiAndNl() {
-    this.buffer = this.buffer.replace(/(\[\d*[A-Z]{1})?\r?\n?/g, "");
+    this.buffer = this.buffer.replace(/(\[\d*[A-Z])?\r?\n?/g, "");
   }
 }

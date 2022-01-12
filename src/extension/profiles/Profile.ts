@@ -4,7 +4,7 @@ import ProfileGitBash from "./ProfileGitBash";
 
 export default interface Profile {
   getShell(): string;
-  getRootPath(): string;
+  updateRootPath(path: string): string;
   readHistory(): Promise<string[]>;
 }
 

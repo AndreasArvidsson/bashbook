@@ -1,3 +1,4 @@
+import * as path from "path";
 import ProfileBash from "./ProfileBash";
 
 export default class ProfileGitBash extends ProfileBash {
@@ -5,7 +6,11 @@ export default class ProfileGitBash extends ProfileBash {
     return "C:/Program Files/Git/bin/bash.exe";
   }
 
-  getRootPath(): string {
-    return "C:/Program Files/Git/";
+  updateRootPath(rootPath: string): string {
+    // /c/ => c:
+    if (/^\/[a-zA-Z]\//.test(rootPath)) {
+      return `${rootPath[1]}:${rootPath.substring(2)}`;
+    }
+    return path.join("C:/Program Files/Git", rootPath);
   }
 }

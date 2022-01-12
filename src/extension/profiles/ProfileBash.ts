@@ -8,8 +8,8 @@ export default class ProfileBash implements Profile {
     return os.platform() === "win32" ? "bash.exe" : "bash";
   }
 
-  getRootPath() {
-    return "/";
+  updateRootPath(path: string): string {
+    return path;
   }
 
   readHistory(): Promise<string[]> {
