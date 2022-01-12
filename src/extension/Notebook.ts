@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { getShell } from "./Options";
+import * as options from "./Options";
 import Pty from "./Pty";
 import {
   OutputMessageData,
@@ -26,11 +26,10 @@ export default class Notebook {
 
   constructor(private graph: Graph, notebookUri: vscode.Uri) {
     this.notebookUri = notebookUri.toString();
-    const shell = getShell();
+    const shell = options.getShell() || graph.profile.getShell();
     const cwd = notebookDirectory(notebookUri);
 
-    console.debug(`Spawning shell: '${shell}'`);
-    console.debug(`@ CWD '${cwd}'`);
+    console.debug(`Spawning shell: '${shell}' @ '${cwd}'`);
 
     this.graph.setCWD(cwd);
     this.pty = new Pty(shell, cwd);

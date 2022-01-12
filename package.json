@@ -61,6 +61,15 @@
                 "bashbook.shell": {
                     "type": "string",
                     "description": "Shell executable (eg: bash, bash.exe)"
+                },
+                "bashbook.profile": {
+                    "type": "string",
+                    "enum": [
+                        "Bash",
+                        "Git Bash"
+                    ],
+                    "default": "Bash",
+                    "description": "Sets default values and behavior for the shell"
                 }
             }
         },

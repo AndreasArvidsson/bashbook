@@ -6,15 +6,19 @@ import Controller from "./Controller";
 import { registerSerializer } from "./Serializer";
 import { RENDERER_ID } from "./Constants";
 import { Graph } from "./types";
+import { createProfile } from "./profiles/Profile";
 
 export function activate(context: vscode.ExtensionContext) {
+  const profile = createProfile();
+
   const {
     disposable: languageDisposable,
     historyPush,
     setCWD,
-  } = registerLanguageProvider();
+  } = registerLanguageProvider(profile);
 
   const graph: Graph = {
+    profile,
     historyPush,
     setCWD,
   };

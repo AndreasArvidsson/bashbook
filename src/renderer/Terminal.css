@@ -12,9 +12,9 @@
 /* Style row text */
 .xterm-rows {
   color: var(--theme-foreground) !important;
-  font-family: var(--theme-code-font-family) !important;
-  font-weight: var(--theme-code-font-weight) !important;
-  font-size: var(--theme-code-font-size) !important;
+  font-family: var(--vscode-editor-font-family) !important;
+  font-weight: var(--vscode-editor-font-weight) !important;
+  font-size: var(--vscode-editor-font-size) !important;
 }
 
 /* Bar cursor un-focus */

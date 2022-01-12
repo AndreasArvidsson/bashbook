@@ -1,13 +1,13 @@
 import { workspace } from "vscode";
-import { platform } from "os";
-
-const NAMESPACE = "bashbook";
+import { NOTEBOOK_TYPE } from "./Constants";
+import { ProfileValue } from "./profiles/Profile";
 
 export function getShell() {
-  const shell = workspace.getConfiguration(NAMESPACE).get<string>("shell");
-  if (shell) {
-    return shell;
-  }
+  return workspace.getConfiguration(NOTEBOOK_TYPE).get<string>("shell");
+}
 
-  return platform() === "win32" ? "bash.exe" : "bash";
+export function getProfile() {
+  return workspace
+    .getConfiguration(NOTEBOOK_TYPE)
+    .get<ProfileValue>("profile", "Bash");
 }
