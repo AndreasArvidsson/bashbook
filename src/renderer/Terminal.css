@@ -1,6 +1,5 @@
-/* calcTermCols() can't determine padding */
-.output_container > div {
-  padding: 6px 0 !important;
+.output_container > .output {
+  padding: 6px !important;
 }
 
 /* Background color */
