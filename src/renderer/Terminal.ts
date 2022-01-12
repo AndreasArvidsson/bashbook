@@ -1,8 +1,8 @@
-import { IDisposable, ITerminalOptions, Terminal as xTerminal } from "xterm";
+import * as xterm from "xterm";
 import "xterm/css/xterm.css";
 import "./Terminal.css";
 
-const DEFAULT_OPTIONS: ITerminalOptions = {
+const DEFAULT_OPTIONS: xterm.ITerminalOptions = {
   rendererType: "dom",
   rows: 1,
 };
@@ -10,11 +10,11 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
 const COLS_MIN = 2;
 const ROWS_MAX = 30;
 
-export default class Terminal extends xTerminal {
+export default class Terminal extends xterm.Terminal {
   private dataContent = "";
-  private onDataDisposable?: IDisposable;
+  private onDataDisposable?: xterm.IDisposable;
 
-  constructor(options: ITerminalOptions) {
+  constructor(options: xterm.ITerminalOptions) {
     super(Object.assign({}, DEFAULT_OPTIONS, options));
   }
 
@@ -54,12 +54,8 @@ export default class Terminal extends xTerminal {
     );
     const parentElementWidth = parseInt(parentElementStyle.width);
     const parentElementPadding = 12;
-    const elementPadding = 0;
     const availableWidth =
-      parentElementWidth -
-      parentElementPadding -
-      elementPadding -
-      core.viewport.scrollBarWidth;
+      parentElementWidth - parentElementPadding - core.viewport.scrollBarWidth;
     return Math.max(
       COLS_MIN,
       Math.floor(
