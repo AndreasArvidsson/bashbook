@@ -89,19 +89,17 @@ export class BashCompletionItemProvider
       : files.files;
 
     const existingName = existingPath.split("/").pop()!;
-    const insertingRange = new vscode.Range(
-      position.translate({
-        characterDelta: -existingName.length,
-      }),
-      position
-    );
+
+    const startPosition = position.translate({
+      characterDelta: -existingName.length,
+    });
 
     // TODO
     console.log(absPath);
     console.log(filteredFiles);
 
     return filteredFiles.map((file) =>
-      createFileCompletionItem(file, insertingRange)
+      createFileCompletionItem(file, startPosition)
     );
   }
 }
@@ -134,7 +132,10 @@ function findLastPath(text: string) {
   return result;
 }
 
-function createFileCompletionItem(file: string, insertingRange: vscode.Range) {
+function createFileCompletionItem(
+  file: string,
+  startPosition: vscode.Position
+) {
   const item: vscode.CompletionItem = {
     label: file,
     kind: vscode.CompletionItemKind.File,
@@ -147,12 +148,9 @@ function createFileCompletionItem(file: string, insertingRange: vscode.Range) {
   } else {
     textLength = file.length;
   }
-  item.range = {
-    inserting: insertingRange,
-    replacing: new vscode.Range(
-      insertingRange.start,
-      insertingRange.start.translate({ characterDelta: textLength })
-    ),
-  };
+  item.range = new vscode.Range(
+    startPosition,
+    startPosition.translate({ characterDelta: textLength })
+  );
   return item;
 }
