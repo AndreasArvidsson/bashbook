@@ -32,7 +32,8 @@
             },
             {
                 "command": "bashbook.newNotebook",
-                "title": "BashBook: Create new Bash notebook"
+                "title": "BashBook: Create new Bash Notebook",
+                "shortTitle": "Bash Notebook"
             }
         ],
         "keybindings": [
@@ -47,6 +48,13 @@
                 "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
             }
         ],
+        "menus": {
+            "file/newFile": [
+                {
+                    "command": "bashbook.newNotebook"
+                }
+            ]
+        },
         "startEntries": [
             {
                 "title": "BashBook",
