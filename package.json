@@ -90,7 +90,7 @@
                 "id": "bashbook-renderer",
                 "entrypoint": "./out/renderer.js",
                 "displayName": "BashBook",
-                "requiresMessaging": "optional",
+                "requiresMessaging": "always",
                 "mimeTypes": [
                     "x-application/bashbook"
                 ]
