@@ -1,7 +1,6 @@
 /* calcTermCols() can't determine padding */
 .output_container > div {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding: 6px 0 !important;
 }
 
 /* Background color */
