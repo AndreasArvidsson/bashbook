@@ -2,7 +2,7 @@ import { IDisposable, ITerminalOptions, Terminal as xTerminal } from "xterm";
 import "xterm/css/xterm.css";
 import "./Terminal.css";
 
-const DEFAULT_OPTIONS = {
+const DEFAULT_OPTIONS: ITerminalOptions = {
   rendererType: "dom",
   rows: 1,
 };

@@ -9,10 +9,15 @@
 
 /* Style row text */
 .xterm-rows {
-  color: var(--theme-foreground) !important;
+  color: var(--vscode-terminal-foreground) !important;
   font-family: var(--vscode-editor-font-family) !important;
   font-weight: var(--vscode-editor-font-weight) !important;
   font-size: var(--vscode-editor-font-size) !important;
+}
+
+/* Selection background  */
+.xterm-selection div {
+  background-color: var(--vscode-terminal-selectionBackground) !important;
 }
 
 /* Bar cursor un-focus */
@@ -39,4 +44,54 @@
 /* Underline cursor. Used as a none/hidden cursor */
 .xterm-rows .xterm-cursor.xterm-cursor-underline {
   box-shadow: none !important;
+}
+
+/* ANSI color codes */
+.xterm-fg-0 {
+  color: var(--vscode-terminal-ansiBlack) !important;
+}
+.xterm-fg-1 {
+  color: var(--vscode-terminal-ansiRed) !important;
+}
+.xterm-fg-2 {
+  color: var(--vscode-terminal-ansiGreen) !important;
+}
+.xterm-fg-3 {
+  color: var(--vscode-terminal-ansiYellow) !important;
+}
+.xterm-fg-4 {
+  color: var(--vscode-terminal-ansiBlue) !important;
+}
+.xterm-fg-5 {
+  color: var(--vscode-terminal-ansiMagenta) !important;
+}
+.xterm-fg-6 {
+  color: var(--vscode-terminal-ansiCyan) !important;
+}
+.xterm-fg-7 {
+  color: var(--vscode-terminal-ansiWhite) !important;
+}
+.xterm-fg-8 {
+  color: var(--vscode-terminal-ansiBrightBlack) !important;
+}
+.xterm-fg-9 {
+  color: var(--vscode-terminal-ansiBrightRed) !important;
+}
+.xterm-fg-10 {
+  color: var(--vscode-terminal-ansiBrightGreen) !important;
+}
+.xterm-fg-11 {
+  color: var(--vscode-terminal-ansiBrightYellow) !important;
+}
+.xterm-fg-12 {
+  color: var(--vscode-terminal-ansiBrightBlue) !important;
+}
+.xterm-fg-13 {
+  color: var(--vscode-terminal-ansiBrightMagenta) !important;
+}
+.xterm-fg-14 {
+  color: var(--vscode-terminal-ansiBrightCyan) !important;
+}
+.xterm-fg-15 {
+  color: var(--vscode-terminal-ansiBrightWhite) !important;
 }
