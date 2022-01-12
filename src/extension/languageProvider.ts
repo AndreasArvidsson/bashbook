@@ -49,8 +49,7 @@ export class BashCompletionItemProvider
       .lineAt(position.line)
       .text.substring(0, position.character);
 
-    // return this.getHistory(text).concat(this.getFiles(text, position));
-    return this.getFiles(text, position, document);
+    return this.getHistory(text).concat(this.getFiles(text, position));
   }
 
   private getHistory(text: string) {
@@ -60,18 +59,13 @@ export class BashCompletionItemProvider
       : this.history;
   }
 
-  private getFiles(
-    text: string,
-    position: vscode.Position,
-    document: vscode.TextDocument
-  ) {
+  private getFiles(text: string, position: vscode.Position) {
     // Start of line is dedicated to history
     if (position.character === 0) {
       return [];
     }
 
     // File system completes from last non-whitespace token
-    // TODO Handle quoted and escaped paths with white space in them
     const existingPath = findLastPath(text);
     let absPath: string;
     if (existingPath) {
