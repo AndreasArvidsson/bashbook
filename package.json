@@ -3,6 +3,12 @@
     "displayName": "BashBook",
     "description": "Notebook for running bash/shell script",
     "version": "0.0.1",
+    "publisher": "AndreasArvidsson",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AndreasArvidsson/bashbook.git"
+    },
     "engines": {
         "vscode": "^1.63.0"
     },
