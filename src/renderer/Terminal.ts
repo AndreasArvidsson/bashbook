@@ -1,4 +1,5 @@
 import * as xterm from "xterm";
+import clipboard from "clipboardy";
 import "xterm/css/xterm.css";
 import "./Terminal.css";
 
@@ -19,8 +20,8 @@ export default class Terminal extends xterm.Terminal {
 
     this.onSelectionChange(async () => {
       // TODO
-      console.log(this.getSelection());
       // await vscode.env.clipboard.writeText(this.getSelection());
+      await clipboard.write(this.getSelection());
     });
   }
 

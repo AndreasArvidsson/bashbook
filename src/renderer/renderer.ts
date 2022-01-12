@@ -1,4 +1,5 @@
 import type { ActivationFunction, OutputItem } from "vscode-notebook-renderer";
+import clipboard from "clipboardy";
 import {
   OutputMessage,
   OutputMessageData,
@@ -37,9 +38,9 @@ export const activate: ActivationFunction = (context) => {
 
     element.addEventListener("contextmenu", async () => {
       // TODO
-      console.log("Right click");
       // const text = await vscode.env.clipboard.getText();
-      // term.paste(text)
+      const text = await clipboard.read();
+      term.paste(text);
     });
 
     return term;
