@@ -16,6 +16,12 @@ export default class Terminal extends xterm.Terminal {
 
   constructor(options: xterm.ITerminalOptions) {
     super(Object.assign({}, DEFAULT_OPTIONS, options));
+
+    this.onSelectionChange(async () => {
+      // TODO
+      console.log(this.getSelection());
+      // await vscode.env.clipboard.writeText(this.getSelection());
+    });
   }
 
   writeData(data: string) {

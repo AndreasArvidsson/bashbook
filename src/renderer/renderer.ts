@@ -35,6 +35,13 @@ export const activate: ActivationFunction = (context) => {
 
     term.open(element);
 
+    element.addEventListener("contextmenu", async () => {
+      // TODO
+      console.log("Right click");
+      // const text = await vscode.env.clipboard.getText();
+      // term.paste(text)
+    });
+
     return term;
   };
 
