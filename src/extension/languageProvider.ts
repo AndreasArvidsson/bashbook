@@ -10,7 +10,7 @@ const selector: vscode.DocumentSelector = { language: LANGUAGE };
 export class BashCompletionItemProvider
   implements vscode.CompletionItemProvider
 {
-  static readonly triggerCharacters = [];
+  static readonly triggerCharacters = ["/"];
   private history: vscode.CompletionItem[] = [];
   private map = new Map<string, vscode.CompletionItem>();
   private nextIndex = Number.MAX_SAFE_INTEGER;
@@ -41,25 +41,29 @@ export class BashCompletionItemProvider
     this.map.get(value)!.sortText = `${--this.nextIndex}`;
   }
 
-  provideCompletionItems(
+  async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position
   ) {
-    const text = document
-      .lineAt(position.line)
-      .text.substring(0, position.character);
-
-    return this.getHistory(text).concat(this.getFiles(text, position));
+    const line = document.lineAt(position.line);
+    const text = line.text.substring(0, position.character);
+    const historyItems = await this.getHistory(text, line.range);
+    const fileItems = await this.getFiles(text, position);
+    return historyItems.concat(fileItems);
   }
 
-  private getHistory(text: string) {
+  private async getHistory(text: string, range: vscode.Range) {
     // History completes from start of line
-    return text
+    const lines = text
       ? this.history.filter(({ label }) => (<string>label).startsWith(text))
       : this.history;
+    lines.forEach((line) => {
+      line.range = range;
+    });
+    return lines;
   }
 
-  private getFiles(text: string, position: vscode.Position) {
+  private async getFiles(text: string, position: vscode.Position) {
     // Start of line is dedicated to history
     if (position.character === 0) {
       return [];
