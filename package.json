@@ -34,6 +34,17 @@
                 "command": "bashbook.newNotebook",
                 "title": "BashBook: Create new Bash Notebook",
                 "shortTitle": "Bash Notebook"
+            },
+            {
+                "command": "bashbook.openAllOutputsInNewFile",
+                "title": "BashBook: Open all outputs in new file",
+                "shortTitle": "Open all outputs"
+            },
+            {
+                "command": "bashbook.openCellOutputInNewFile",
+                "title": "BashBook: Open cell output in new file",
+                "shortTitle": "Open cell output",
+                "when": "notebookType == bashbook && notebookCellType == code && notebookCellHasOutputs"
             }
         ],
         "keybindings": [
@@ -49,9 +60,33 @@
             }
         ],
         "menus": {
+            "commandPalette": [
+                {
+                    "command": "bashbook.openAllOutputsInNewFile",
+                    "when": "false"
+                },
+                {
+                    "command": "bashbook.openCellOutputInNewFile",
+                    "when": "false"
+                }
+            ],
             "file/newFile": [
                 {
                     "command": "bashbook.newNotebook"
+                }
+            ],
+            "notebook/toolbar": [
+                {
+                    "command": "bashbook.openAllOutputsInNewFile",
+                    "group": "navigation",
+                    "when": "notebookType == bashbook && notebookHasOutputs"
+                }
+            ],
+            "notebook/cell/title": [
+                {
+                    "command": "bashbook.openCellOutputInNewFile",
+                    "group": "output",
+                    "when": "notebookType == bashbook && notebookCellType == code && notebookCellHasOutputs"
                 }
             ]
         },
