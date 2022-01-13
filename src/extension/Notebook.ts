@@ -8,7 +8,7 @@ import {
 import ansiRegex from "./ansiRegex";
 import { MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
 import updateCommand from "./updateCommand";
-import { Graph } from "./types";
+import { Graph } from "./typings/types";
 import notebookDirectory from "./notebookDirectory";
 
 interface CommandExecution {
@@ -44,11 +44,10 @@ export default class Notebook {
     execution.start(Date.now());
     execution.clearOutput();
 
-    const commands = execution.cell.document
-      .getText()
-      .split("\n")
-      .map((command) => command.trim())
-      .filter(Boolean);
+    const commands = this.graph
+      .getTree(execution.cell.document)
+      .rootNode.children.filter((child) => child.type === "command")
+      .map((child) => child.text);
 
     if (commands.length === 0) {
       execution.end(true, Date.now());

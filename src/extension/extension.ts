@@ -5,10 +5,12 @@ import { registerLanguageProvider } from "./languageProvider";
 import Controller from "./Controller";
 import { registerSerializer } from "./Serializer";
 import { RENDERER_ID } from "./Constants";
-import { Graph } from "./types";
+import { Graph } from "./typings/types";
 import { createProfile } from "./profiles/Profile";
+import { getTreeSitterApi } from "./treeSitter";
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+  const { getTree } = await getTreeSitterApi();
   const profile = createProfile();
 
   const {
@@ -21,6 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
     profile,
     historyPush,
     setCWD,
+    getTree,
   };
 
   const controller = new Controller(graph);
