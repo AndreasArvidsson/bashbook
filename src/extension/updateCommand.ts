@@ -7,7 +7,7 @@ export default (command: string, execution: NotebookCellExecution) => {
   return command
     .split(regex)
     .map((value) =>
-      regex.test(value) ? parseVariable(value, execution) : value
+      regex.test(value) ? parseVariable(value, execution).text : value
     )
     .join("");
 };
@@ -23,7 +23,10 @@ function parseVariable(variable: string, execution: NotebookCellExecution) {
   if (!cell) {
     throw Error(`Can't find execution [${order}]`);
   }
-  return cellToString(cell);
+  return {
+    order,
+    text: cellToString(cell),
+  };
 }
 
 function cellToString(cell: NotebookCell) {

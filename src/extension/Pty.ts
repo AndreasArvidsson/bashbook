@@ -81,7 +81,11 @@ export default class Pty {
 
         // We're both waiting for command and have data in the parser buffer
         // Something has gone wrong with the parsing of the command. Probably due to control characters.
-        if (waitingForCommand && !parser.isEmpty()) {
+        if (
+          waitingForCommand &&
+          !parser.isEmpty() &&
+          !waitingForCommand.startsWith("\n")
+        ) {
           console.error(
             `Waiting for command with data in parser buffer\n'${parser.get()}'`
           );
