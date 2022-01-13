@@ -1,13 +1,14 @@
 import * as vscode from "vscode";
 import { ExtensionMessage } from "../common/ExtensionMessage";
-import { registerCommands } from "./commands";
-import { registerLanguageProvider } from "./languageProvider";
-import Controller from "./Controller";
-import { registerSerializer } from "./Serializer";
-import { RENDERER_ID } from "./Constants";
+import { getTreeSitterApi } from "./util/treeSitter";
+import getCommandLines from "./util/getCommandLines";
 import { Graph } from "./typings/types";
 import { createProfile } from "./profiles/Profile";
-import { getTreeSitterApi } from "./treeSitter";
+import { RENDERER_ID } from "./Constants";
+import registerCommands from "./commandProvider";
+import registerLanguageProvider from "./languageProvider";
+import Controller from "./Controller";
+import { registerSerializer } from "./Serializer";
 
 export async function activate(context: vscode.ExtensionContext) {
   const { getTree } = await getTreeSitterApi();
@@ -23,7 +24,7 @@ export async function activate(context: vscode.ExtensionContext) {
     profile,
     historyPush,
     setCWD,
-    getTree,
+    getCommandLines: (document) => getCommandLines(getTree, document),
   };
 
   const controller = new Controller(graph);
@@ -32,7 +33,7 @@ export async function activate(context: vscode.ExtensionContext) {
     languageDisposable,
     controller,
     registerSerializer(),
-    registerCommands(),
+    registerCommands(graph),
     vscode.workspace.onDidOpenNotebookDocument(
       controller.onDidOpenNotebookDocument
     ),

@@ -1,14 +1,5 @@
+import * as vscode from "vscode";
 import { TextDecoder, TextEncoder } from "util";
-import {
-  NotebookCellData,
-  NotebookCellExecutionSummary,
-  NotebookCellKind,
-  NotebookCellOutput,
-  NotebookCellOutputItem,
-  NotebookData,
-  NotebookSerializer,
-  workspace,
-} from "vscode";
 import { NOTEBOOK_TYPE } from "./Constants";
 
 type Metadata = { [key: string]: any };
@@ -16,11 +7,11 @@ type Metadata = { [key: string]: any };
 interface RawNotebook {
   metadata?: Metadata;
   cells: {
-    kind: NotebookCellKind;
+    kind: vscode.NotebookCellKind;
     value: string;
     languageId: string;
     metadata?: Metadata;
-    executionSummary?: NotebookCellExecutionSummary;
+    executionSummary?: vscode.NotebookCellExecutionSummary;
     outputs?: {
       metadata?: Metadata;
       items: {
@@ -31,8 +22,8 @@ interface RawNotebook {
   }[];
 }
 
-class Serializer implements NotebookSerializer {
-  async deserializeNotebook(content: Uint8Array): Promise<NotebookData> {
+class Serializer implements vscode.NotebookSerializer {
+  async deserializeNotebook(content: Uint8Array): Promise<vscode.NotebookData> {
     const contents = new TextDecoder().decode(content);
 
     let raw: RawNotebook;
@@ -44,9 +35,9 @@ class Serializer implements NotebookSerializer {
       };
     }
 
-    const notebook = new NotebookData(
+    const notebook = new vscode.NotebookData(
       raw.cells.map((item) => {
-        const cell = new NotebookCellData(
+        const cell = new vscode.NotebookCellData(
           item.kind,
           item.value,
           item.languageId
@@ -55,10 +46,10 @@ class Serializer implements NotebookSerializer {
         cell.executionSummary = item.executionSummary;
         cell.outputs = item.outputs?.map(
           (output) =>
-            new NotebookCellOutput(
+            new vscode.NotebookCellOutput(
               output.items.map(
                 (item) =>
-                  new NotebookCellOutputItem(
+                  new vscode.NotebookCellOutputItem(
                     new TextEncoder().encode(item.data),
                     item.mime
                   )
@@ -74,7 +65,7 @@ class Serializer implements NotebookSerializer {
     return notebook;
   }
 
-  async serializeNotebook(data: NotebookData): Promise<Uint8Array> {
+  async serializeNotebook(data: vscode.NotebookData): Promise<Uint8Array> {
     const contents: RawNotebook = {
       metadata: data.metadata,
       cells: data.cells.map((cell) => ({
@@ -99,7 +90,11 @@ class Serializer implements NotebookSerializer {
 }
 
 export function registerSerializer() {
-  return workspace.registerNotebookSerializer(NOTEBOOK_TYPE, new Serializer(), {
-    transientOutputs: true,
-  });
+  return vscode.workspace.registerNotebookSerializer(
+    NOTEBOOK_TYPE,
+    new Serializer(),
+    {
+      transientOutputs: true,
+    }
+  );
 }

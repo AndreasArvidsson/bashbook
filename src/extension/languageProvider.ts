@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import * as os from "os";
 import * as path from "path";
-import { LANGUAGE } from "./Constants";
-import { getFilesForDirOrParent } from "./fileSystem";
+import getFilesForDirOrParent from "./util/getFilesForDirOrParent";
 import Profile from "./profiles/Profile";
+import { LANGUAGE } from "./Constants";
 
 const selector: vscode.DocumentSelector = { language: LANGUAGE };
 
@@ -109,7 +109,7 @@ export class BashCompletionItemProvider
   }
 }
 
-export function registerLanguageProvider(profile: Profile) {
+export default (profile: Profile) => {
   const historyCompletionItemProvider = new BashCompletionItemProvider(profile);
   return {
     disposable: vscode.Disposable.from(
@@ -122,7 +122,7 @@ export function registerLanguageProvider(profile: Profile) {
     historyPush: historyCompletionItemProvider.historyPush,
     setCWD: historyCompletionItemProvider.setCWD,
   };
-}
+};
 
 function findLastPath(text: string) {
   // Since javascript doesn't support negative lookbehind we have to do this manually

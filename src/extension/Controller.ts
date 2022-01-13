@@ -5,8 +5,8 @@ import {
   NOTEBOOK_LABEL,
   NOTEBOOK_TYPE,
 } from "./Constants";
-import Notebook from "./Notebook";
 import { Graph } from "./typings/types";
+import Notebook from "./Notebook";
 
 export default class Controller {
   private readonly controller: vscode.NotebookController;

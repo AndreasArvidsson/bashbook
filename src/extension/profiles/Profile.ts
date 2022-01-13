@@ -1,4 +1,4 @@
-import { getProfile } from "../Options";
+import { getProfile } from "../util/Options";
 import ProfileBash from "./ProfileBash";
 import ProfileGitBash from "./ProfileGitBash";
 

@@ -1,5 +1,5 @@
 import { NotebookCell, NotebookCellExecution } from "vscode";
-import { MIME_PLAINTEXT } from "./Constants";
+import { MIME_PLAINTEXT } from "../Constants";
 
 const regex = /(\$:\d*)/g;
 

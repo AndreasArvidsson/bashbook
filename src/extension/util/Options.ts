@@ -1,6 +1,6 @@
 import { workspace } from "vscode";
-import { NOTEBOOK_TYPE } from "./Constants";
-import { ProfileValue } from "./profiles/Profile";
+import { ProfileValue } from "../profiles/Profile";
+import { NOTEBOOK_TYPE } from "../Constants";
 
 export function getShell() {
   return workspace.getConfiguration(NOTEBOOK_TYPE).get<string>("shell");

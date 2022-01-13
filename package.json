@@ -27,16 +27,6 @@
     "contributes": {
         "commands": [
             {
-                "command": "bashbook.cell.executeAndClear",
-                "title": "BashBook: Execute cell and clear content",
-                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
-            },
-            {
-                "command": "bashbook.cell.clearAndEdit",
-                "title": "BashBook: Clear cell content and edit",
-                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
-            },
-            {
                 "command": "bashbook.newNotebook",
                 "title": "BashBook: Create new Bash Notebook",
                 "shortTitle": "Bash Notebook"
@@ -47,7 +37,22 @@
                 "shortTitle": "Open all outputs"
             },
             {
-                "command": "bashbook.openCellOutputInNewFile",
+                "command": "bashbook.openNotebookAsMarkdown",
+                "title": "BashBook: Open notebook as markdown",
+                "shortTitle": "Open notebook as markdown"
+            },
+            {
+                "command": "bashbook.cell.executeAndClear",
+                "title": "BashBook: Execute cell and clear content",
+                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+            },
+            {
+                "command": "bashbook.cell.clearAndEdit",
+                "title": "BashBook: Clear cell content and edit",
+                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+            },
+            {
+                "command": "bashbook.cell.openOutputInNewFile",
                 "title": "BashBook: Open cell output in new file",
                 "shortTitle": "Open cell output",
                 "when": "notebookType == bashbook && notebookCellType == code && notebookCellHasOutputs"
@@ -72,7 +77,11 @@
                     "when": "false"
                 },
                 {
-                    "command": "bashbook.openCellOutputInNewFile",
+                    "command": "bashbook.openNotebookAsMarkdown",
+                    "when": "false"
+                },
+                {
+                    "command": "bashbook.cell.openOutputInNewFile",
                     "when": "false"
                 }
             ],
@@ -84,14 +93,19 @@
             "notebook/toolbar": [
                 {
                     "command": "bashbook.openAllOutputsInNewFile",
-                    "group": "navigation",
+                    "group": "z_commands",
                     "when": "notebookType == bashbook && notebookHasOutputs"
+                },
+                {
+                    "command": "bashbook.openNotebookAsMarkdown",
+                    "group": "z_commands",
+                    "when": "notebookType == bashbook"
                 }
             ],
             "notebook/cell/title": [
                 {
-                    "command": "bashbook.openCellOutputInNewFile",
-                    "group": "output",
+                    "command": "bashbook.cell.openOutputInNewFile",
+                    "group": "z_commands",
                     "when": "notebookType == bashbook && notebookCellType == code && notebookCellHasOutputs"
                 }
             ]

@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-export function getFilesForDirOrParent(absPath: string) {
+export default (absPath: string) => {
   try {
     const stat = fs.statSync(absPath);
     if (stat.isDirectory()) {
@@ -24,4 +24,4 @@ export function getFilesForDirOrParent(absPath: string) {
     files: [],
     name: "",
   };
-}
+};

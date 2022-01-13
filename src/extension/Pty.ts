@@ -1,6 +1,6 @@
-import { IPty, spawn } from "node-pty";
 import { commands } from "vscode";
-import Parser from "./Parser";
+import { IPty, spawn } from "node-pty";
+import Parser from "./util/Parser";
 
 const CTRL_C = "\x03";
 const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";

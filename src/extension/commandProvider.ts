@@ -1,14 +1,16 @@
 import * as vscode from "vscode";
+import Parser = require("web-tree-sitter");
 import { LANGUAGE, MIME_PLAINTEXT, NOTEBOOK_TYPE } from "./Constants";
+import { Graph } from "./typings/types";
 
-const executeAndClear = async () => {
+const cellExecuteAndClear = async () => {
   await vscode.commands.executeCommand(
     "notebook.cell.executeAndFocusContainer"
   );
-  await clearAndEdit();
+  await cellClearAndEdit();
 };
 
-const clearAndEdit = async () => {
+const cellClearAndEdit = async () => {
   await vscode.commands.executeCommand("notebook.cell.edit");
   const editor = vscode.window.activeTextEditor;
   await editor?.edit((editBuilder) => {
@@ -41,31 +43,80 @@ const openAllOutputsInNewFile = async (editor: NotebookEditor) => {
   }
   const content = document
     .getCells()
-    .map(cellToString)
+    .map(getCellPlainTextOutput)
     .filter(Boolean)
-    .join("\n----------\n");
+    .join("\n\n----------\n\n");
   const newDocument = await vscode.workspace.openTextDocument({
     content,
-    language: MIME_PLAINTEXT,
+    language: "plaintext",
   });
   await vscode.commands.executeCommand("vscode.open", newDocument.uri);
 };
 
-const openCellOutputInNewFile = async (cell: vscode.NotebookCell) => {
+const openNotebookAsMarkdown = async (editor: NotebookEditor, graph: Graph) => {
+  const document = vscode.workspace.notebookDocuments.find(
+    (notebook) =>
+      notebook.uri.toString() ===
+      editor?.notebookEditor?.notebookUri?.toString()
+  );
+  if (!document) {
+    return;
+  }
+
+  const parseCodeCell = (cell: vscode.NotebookCell) => {
+    const commands = graph.getCommandLines(cell.document);
+    const output = getCellPlainTextOutput(cell);
+    let content = "```bash\n";
+    if (commands.length) {
+      content += commands.map((command) => "$ " + command).join("");
+    } else {
+      content += "$";
+    }
+    if (output) {
+      content += `\n\n${output}`;
+    }
+    content += "\n```\n";
+    return content;
+  };
+
+  const content = document
+    .getCells()
+    .map((cell) => {
+      const content = [];
+      if (cell.kind === vscode.NotebookCellKind.Markup) {
+        content.push(cell.document.getText().trim() + "\n");
+      } else {
+        content.push(parseCodeCell(cell));
+      }
+      return content.join("\n");
+    })
+    .join("\n");
+
   const newDocument = await vscode.workspace.openTextDocument({
-    content: cellToString(cell),
-    language: MIME_PLAINTEXT,
+    content,
+    language: "markdown",
   });
   await vscode.commands.executeCommand("vscode.open", newDocument.uri);
 };
 
-export const registerCommands = () =>
+const cellOpenOutputInNewFile = async (cell: vscode.NotebookCell) => {
+  const newDocument = await vscode.workspace.openTextDocument({
+    content: getCellPlainTextOutput(cell),
+    language: "plaintext",
+  });
+  await vscode.commands.executeCommand("vscode.open", newDocument.uri);
+};
+
+export default (graph: Graph) =>
   vscode.Disposable.from(
-    registerCommand("cell.executeAndClear", executeAndClear),
-    registerCommand("cell.clearAndEdit", clearAndEdit),
     registerCommand("newNotebook", newNotebook),
     registerCommand("openAllOutputsInNewFile", openAllOutputsInNewFile),
-    registerCommand("openCellOutputInNewFile", openCellOutputInNewFile)
+    registerCommand("openNotebookAsMarkdown", (editor) =>
+      openNotebookAsMarkdown(editor, graph)
+    ),
+    registerCommand("cell.executeAndClear", cellExecuteAndClear),
+    registerCommand("cell.clearAndEdit", cellClearAndEdit),
+    registerCommand("cell.openOutputInNewFile", cellOpenOutputInNewFile)
   );
 
 function registerCommand(command: string, callback: (...args: any[]) => any) {
@@ -75,7 +126,7 @@ function registerCommand(command: string, callback: (...args: any[]) => any) {
   );
 }
 
-function cellToString(cell: vscode.NotebookCell) {
+function getCellPlainTextOutput(cell: vscode.NotebookCell) {
   const data: string[] = [];
   cell.outputs.forEach((output) =>
     output.items.forEach((item) => {

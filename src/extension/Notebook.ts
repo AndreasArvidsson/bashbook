@@ -1,15 +1,15 @@
 import * as vscode from "vscode";
-import * as options from "./Options";
+import * as options from "./util/Options";
 import Pty from "./Pty";
 import {
   OutputMessageData,
   OutputMessageFinished,
 } from "../common/OutputMessage";
-import ansiRegex from "./ansiRegex";
+import ansiRegex from "./util/ansiRegex";
 import { MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
-import updateCommand from "./updateCommand";
+import updateCommand from "./util/updateCommandForVariables";
 import { Graph } from "./typings/types";
-import notebookDirectory from "./notebookDirectory";
+import notebookDirectory from "./util/getNotebookDirectory";
 
 interface CommandExecution {
   command: string;
@@ -45,9 +45,8 @@ export default class Notebook {
     await execution.clearOutput();
 
     const commands = this.graph
-      .getTree(execution.cell.document)
-      .rootNode.children.filter((child) => child.type === "command")
-      .map((child) => child.text);
+      .getCommandLines(execution.cell.document)
+      .map((command) => command.trim());
 
     if (commands.length === 0) {
       execution.end(true, Date.now());
@@ -145,7 +144,7 @@ export default class Notebook {
           new vscode.NotebookCellOutput([
             vscode.NotebookCellOutputItem.json(json, MIME_BASHBOOK),
             vscode.NotebookCellOutputItem.text(
-              dataChunks.join("\n").replace(ansiRegex, ""),
+              dataChunks.join("\n").replace(ansiRegex, "").trimEnd(),
               MIME_PLAINTEXT
             ),
           ])
