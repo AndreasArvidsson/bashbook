@@ -26,7 +26,7 @@ export class BashCompletionItemProvider
   }
 
   setCWD(cwd: string) {
-    this.cwd = cwd;
+    this.cwd = cwd.startsWith("~") ? tildeToPath(cwd) : cwd;
   }
 
   historyPush(value: string) {
@@ -76,7 +76,7 @@ export class BashCompletionItemProvider
       // '\ ' is not a syntax that works in node
       const pathText = existingPath.replace(/\\ /g, " ");
       if (pathText.startsWith("~")) {
-        absPath = path.join(os.homedir(), pathText.substring(1));
+        absPath = tildeToPath(pathText);
       } else if (pathText.startsWith("/")) {
         absPath = this.profile.updateRootPath(pathText);
       } else {
@@ -157,4 +157,8 @@ function createFileCompletionItem(
     startPosition.translate({ characterDelta: textLength })
   );
   return item;
+}
+
+function tildeToPath(relativePath: string) {
+  return path.join(os.homedir(), relativePath.substring(1));
 }
