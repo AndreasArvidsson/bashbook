@@ -65,7 +65,8 @@ export class BashCompletionItemProvider
 
   private async getFiles(text: string, position: vscode.Position) {
     // Start of line is dedicated to history
-    if (position.character === 0) {
+    // An empty ~ does not reference the home directory like ~/ does
+    if (position.character === 0 || text === "~") {
       return [];
     }
 
