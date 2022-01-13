@@ -80,10 +80,10 @@ export class BashCompletionItemProvider
       } else if (pathText.startsWith("/")) {
         absPath = this.profile.updateRootPath(pathText);
       } else {
-        absPath = path.resolve(this.cwd, pathText);
+        absPath = path.join(this.cwd, pathText);
       }
     } else {
-      absPath = path.resolve(this.cwd);
+      absPath = this.cwd;
     }
 
     const files = getFilesForDirOrParent(absPath);
