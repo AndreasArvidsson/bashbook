@@ -13,37 +13,13 @@ export default (command: string, execution: NotebookCellExecution) => {
 };
 
 function parseVariable(variable: string, execution: NotebookCellExecution) {
-  const cells = execution.cell.notebook
+  const order =
+    variable.length === 2
+      ? execution.executionOrder! - 1
+      : parseInt(variable.substring(2));
+  const cell = execution.cell.notebook
     .getCells()
-    .filter((cell) => cell.executionSummary?.executionOrder != null);
-  if (variable.length === 2) {
-    return findLastExecution(cells);
-  }
-  const order = parseInt(variable.substring(2));
-  return findExecution(cells, order);
-}
-
-function findLastExecution(cells: NotebookCell[]) {
-  let lastCell;
-  if (cells.length) {
-    lastCell = cells.reduce((lastCell, cell) =>
-      !lastCell ||
-      cell.executionSummary!.executionOrder! >
-        lastCell.executionSummary!.executionOrder!
-        ? cell
-        : lastCell
-    );
-  }
-  if (!lastCell) {
-    throw Error(`Can't find last execution`);
-  }
-  return cellToString(lastCell);
-}
-
-function findExecution(cells: NotebookCell[], order: number) {
-  const cell = cells.find(
-    (cell) => cell.executionSummary?.executionOrder === order
-  );
+    .find((cell) => cell.executionSummary?.executionOrder === order);
   if (!cell) {
     throw Error(`Can't find execution [${order}]`);
   }
@@ -70,5 +46,5 @@ function cellToString(cell: NotebookCell) {
       `No output available on execution [${cell.executionSummary?.executionOrder}]`
     );
   }
-  return data.join("\n").trim();
+  return data.join("\n").replace(/\r/g, "");
 }

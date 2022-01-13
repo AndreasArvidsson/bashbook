@@ -27,13 +27,16 @@ export default class Parser {
     let bufferI = 0;
     let dataI = 0;
     while (bufferI < this.buffer.length && dataI < data.length) {
-      const bufferChar = this.buffer[bufferI++];
-      if (bufferChar === "\r" || bufferChar === "\n") {
-        continue;
-      }
-      if (bufferChar !== data[dataI++]) {
+      const bufferChar = this.buffer[bufferI];
+      if (bufferChar !== data[dataI]) {
+        if (bufferChar === "\r" || bufferChar === "\n") {
+          ++bufferI;
+          continue;
+        }
         break;
       }
+      ++bufferI;
+      ++dataI;
     }
     return [bufferI, dataI];
   }

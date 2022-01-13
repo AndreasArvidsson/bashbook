@@ -5,8 +5,8 @@ import Parser from "./Parser";
 const CTRL_C = "\x03";
 const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";
 const ROWS = 30;
-
 const UUID_REGEXP = new RegExp(UUID.split("").join("\\s*\\r?\\n?"));
+const PS2 = "> ";
 
 interface Result {
   errorCode: number;
@@ -33,8 +33,9 @@ export default class Pty {
 
     this.pid = this.pty.pid;
 
-    // Set PS1/prompt
+    // Set prompt
     this.pty.write(`export PS1="${UUID}|\\$?|\\w|"\r`);
+    this.pty.write(`export PS2="${PS2}"\r`);
   }
 
   dispose() {
@@ -69,31 +70,30 @@ export default class Pty {
 
       // Don't print command when it's echoed back
       const parseCommand = () => {
+        if (waitingForCommand.startsWith("\n")) {
+          const i = parser.indexOf(PS2);
+          if (i > -1) {
+            waitingForCommand = waitingForCommand.substring(1);
+            parser.advance(i + PS2.length);
+          }
+        }
         waitingForCommand = parser.match(waitingForCommand);
 
         // We're both waiting for command and have data in the parser buffer
         // Something has gone wrong with the parsing of the command. Probably due to control characters.
-        // Solution for now is to just treat this as data if we can't find the end of the line
         if (waitingForCommand && !parser.isEmpty()) {
           console.error(
             `Waiting for command with data in parser buffer\n'${parser.get()}'`
           );
-          let countNl = waitingForCommand.split("\n").length;
-          while (countNl--) {
-            const i = parser.indexOf("\n");
-            if (i < 0) {
-              break;
-            }
-            parser.advance(i + 1);
-          }
           waitingForCommand = "";
         }
 
         if (!waitingForCommand) {
           parseCallback = parseData;
-          if (!parser.isEmpty()) {
-            parseCallback();
-          }
+        }
+
+        if (!parser.isEmpty()) {
+          parseCallback();
         }
       };
 

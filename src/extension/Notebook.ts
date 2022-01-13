@@ -39,10 +39,10 @@ export default class Notebook {
     this.pty.dispose();
   }
 
-  doExecution(execution: vscode.NotebookCellExecution) {
+  async doExecution(execution: vscode.NotebookCellExecution) {
     execution.executionOrder = ++this.executionOrder;
     execution.start(Date.now());
-    execution.clearOutput();
+    await execution.clearOutput();
 
     const commands = this.graph
       .getTree(execution.cell.document)
