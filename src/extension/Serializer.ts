@@ -71,7 +71,7 @@ class Serializer implements vscode.NotebookSerializer {
         languageId: cell.languageId,
         value: cell.value,
         metadata: cell.metadata,
-        executionSummary: cell.executionSummary,
+        // executionSummary: cell.executionSummary,
         // outputs: cell.outputs?.map((output) => ({
         //   metadata: output.metadata,
         //   items: output.items.map((item) => {

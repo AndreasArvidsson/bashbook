@@ -2,35 +2,40 @@
 
 Notebook for running bash/shell script
 
-**Early version. Not for public consumption yet!**
+![example ls](./images/example_ls.png)
+
+## Creating a BashBook
+
+BashBook the way you would any normal notebook
+
+1. Open a file with the `.bashbook` extension
+1. New File... / `Bash Notebook`
+1. Command / `BashBook: Create new Bash Notebook`
 
 ## Commands
 
 - `ctrl+backspace`  
-   `bashbook.cell.executeAndClear`  
    Execute cell and clear content
 
-- `shift+backspace`
-  `bashbook.cell.clearAndEdit`  
-   Clear cell content and edit
+- `shift+backspace`  
+  Clear cell content and edit
 
-- `bashbook.newNotebook`  
-   Create new Bash notebook
-
-## Information
+## Details
 
 ### One shell per notebook
 
-Each notebook is running one continuous shell. This means that commands running in one cell will effect the others. Only one execution is allowed at the time. Rest is queued.
+Each notebook is running one continuous shell. This means that commands running in one cell will effect the others. Only one execution is allowed at the time and the rest is queued.
 
 ### Interactive terminal (prompt)
 
 Interaction with running execution is possible in the output terminal. Finished executions are non-interactive.
 
+![example prompt](./images/example_prompt.png)
+
 ### Resize
 
-- Resize terminal height to fit content dynamically
-- Resize terminal width at end of execution. Only affects next execution.
+- Resizes terminal height to fit content dynamically
+- Resizes terminal width at end of execution. Only affects next execution.
 
 ### Current Working Directory(CWD)
 
