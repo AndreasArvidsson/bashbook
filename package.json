@@ -21,9 +21,6 @@
         "onCommand:bashbook.newNotebook"
     ],
     "main": "./out/extension.js",
-    "files": [
-        "./out/*"
-    ],
     "contributes": {
         "commands": [
             {
@@ -167,7 +164,8 @@
         "compile:renderer": "webpack --mode production",
         "watch": "concurrently -r \"npm:watch:*\"",
         "watch:extension": "tsc --build --watch ./src/extension",
-        "watch:renderer": "webpack --mode development --watch"
+        "watch:renderer": "webpack --mode development --watch",
+        "vscode:publish": "vsce publish --target win32-x64 linux-x64 darwin-x64 darwin-arm64"
     },
     "extensionDependencies": [
         "pokey.parse-tree"
