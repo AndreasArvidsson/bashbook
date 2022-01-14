@@ -64,6 +64,5 @@ npm run compile
 If you get an error `NODE_MODULE_VERSION` mismatch run the following:
 
 ```
-cd node_modules/node-pty
-../.bin/electron-rebuild
+node_modules/.bin/electron-rebuild -w node-pty
 ```
