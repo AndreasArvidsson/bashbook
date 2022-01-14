@@ -24,11 +24,9 @@ interface RawNotebook {
 
 class Serializer implements vscode.NotebookSerializer {
   async deserializeNotebook(content: Uint8Array): Promise<vscode.NotebookData> {
-    const contents = new TextDecoder().decode(content);
-
     let raw: RawNotebook;
     try {
-      raw = <RawNotebook>JSON.parse(contents);
+      raw = <RawNotebook>JSON.parse(new TextDecoder().decode(content));
     } catch {
       raw = {
         cells: [],
@@ -50,7 +48,7 @@ class Serializer implements vscode.NotebookSerializer {
               output.items.map(
                 (item) =>
                   new vscode.NotebookCellOutputItem(
-                    new TextEncoder().encode(item.data),
+                    new TextEncoder().encode(JSON.stringify(item.data)),
                     item.mime
                   )
               ),
@@ -73,15 +71,23 @@ class Serializer implements vscode.NotebookSerializer {
         languageId: cell.languageId,
         value: cell.value,
         metadata: cell.metadata,
-        // TODO Store data as proper json instead of bytes
         executionSummary: cell.executionSummary,
-        outputs: cell.outputs?.map((output) => ({
-          metadata: output.metadata,
-          items: output.items.map((item) => ({
-            mime: item.mime,
-            data: new TextDecoder().decode(item.data),
-          })),
-        })),
+        // outputs: cell.outputs?.map((output) => ({
+        //   metadata: output.metadata,
+        //   items: output.items.map((item) => {
+        //     const outputString = new TextDecoder().decode(item.data);
+        //     let data;
+        //     try {
+        //       data = JSON.parse(outputString);
+        //     } catch (ex) {
+        //       data = outputString;
+        //     }
+        //     return {
+        //       mime: item.mime,
+        //       data,
+        //     };
+        //   }),
+        // })),
       })),
     };
 
@@ -94,7 +100,7 @@ export function registerSerializer() {
     NOTEBOOK_TYPE,
     new Serializer(),
     {
-      // transientOutputs: true,
+      transientOutputs: true,
     }
   );
 }

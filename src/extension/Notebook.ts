@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import * as options from "./util/Options";
 import Pty from "./Pty";
 import {
-  OutputMessageData,
-  OutputMessageFinished,
+  OutputMessageExecuting,
+  OutputMessageCompleted,
 } from "../common/OutputMessage";
 import ansiRegex from "./util/ansiRegex";
 import { MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
@@ -115,8 +115,8 @@ export default class Notebook {
         return;
       }
 
-      const json: OutputMessageData = {
-        type: "data",
+      const json: OutputMessageExecuting = {
+        type: "executing",
         notebookUri: this.notebookUri,
         cellUri,
         data,
@@ -137,8 +137,8 @@ export default class Notebook {
     const end = (success: boolean, cwd?: string) => {
       const finishedData = dataChunks.join("");
       if (!firstCommand) {
-        const json: OutputMessageFinished = {
-          type: "finished",
+        const json: OutputMessageCompleted = {
+          type: "completed",
           notebookUri: this.notebookUri,
           cellUri,
           data: finishedData,

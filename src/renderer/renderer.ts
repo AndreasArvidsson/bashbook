@@ -2,8 +2,8 @@ import type { ActivationFunction, OutputItem } from "vscode-notebook-renderer";
 import clipboard from "clipboardy";
 import {
   OutputMessage,
-  OutputMessageData,
-  OutputMessageFinished,
+  OutputMessageExecuting,
+  OutputMessageCompleted,
 } from "../common/OutputMessage";
 import { ExtensionMessage } from "../common/ExtensionMessage";
 import Terminal from "./Terminal";
@@ -44,8 +44,8 @@ export const activate: ActivationFunction = (context) => {
     return term;
   };
 
-  const onDataMessage = (
-    { notebookUri, cellUri, data, cols, firstCommand }: OutputMessageData,
+  const onExecutingMessage = (
+    { notebookUri, cellUri, data, cols, firstCommand }: OutputMessageExecuting,
     element: HTMLElement
   ) => {
     if (firstCommand) {
@@ -59,8 +59,8 @@ export const activate: ActivationFunction = (context) => {
     term.write(data);
   };
 
-  const onFinishedMessage = (
-    { notebookUri, cellUri, data, cols }: OutputMessageFinished,
+  const onCompletedMessage = (
+    { notebookUri, cellUri, data, cols }: OutputMessageCompleted,
     element: HTMLElement
   ) => {
     let term = uriMap.get(cellUri);
@@ -90,11 +90,11 @@ export const activate: ActivationFunction = (context) => {
   const renderOutputItem = (outputItem: OutputItem, element: HTMLElement) => {
     const message: OutputMessage = outputItem.json();
     switch (message.type) {
-      case "data":
-        onDataMessage(message, element);
+      case "executing":
+        onExecutingMessage(message, element);
         break;
-      case "finished":
-        onFinishedMessage(message, element);
+      case "completed":
+        onCompletedMessage(message, element);
         break;
     }
   };

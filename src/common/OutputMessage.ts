@@ -1,5 +1,5 @@
-export interface OutputMessageData {
-  type: "data";
+export interface OutputMessageExecuting {
+  type: "executing";
   notebookUri: string;
   cellUri: string;
   data: string;
@@ -7,12 +7,12 @@ export interface OutputMessageData {
   firstCommand: boolean;
 }
 
-export interface OutputMessageFinished {
-  type: "finished";
+export interface OutputMessageCompleted {
+  type: "completed";
   notebookUri: string;
   cellUri: string;
   data: string;
   cols: number;
 }
 
-export type OutputMessage = OutputMessageData | OutputMessageFinished;
+export type OutputMessage = OutputMessageExecuting | OutputMessageCompleted;
