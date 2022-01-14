@@ -40,31 +40,28 @@
             },
             {
                 "command": "bashbook.cell.executeAndClear",
-                "title": "BashBook: Execute cell and clear content",
-                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+                "title": "BashBook: Execute cell and clear content"
             },
             {
                 "command": "bashbook.cell.clearAndEdit",
-                "title": "BashBook: Clear cell content and edit",
-                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+                "title": "BashBook: Clear cell content and edit"
             },
             {
                 "command": "bashbook.cell.openOutputInNewFile",
                 "title": "BashBook: Open cell output in new file",
-                "shortTitle": "Open cell output",
-                "when": "notebookType == bashbook && notebookCellType == code && notebookCellHasOutputs"
+                "shortTitle": "Open cell output"
             }
         ],
         "keybindings": [
             {
                 "command": "bashbook.cell.executeAndClear",
                 "key": "ctrl+backspace",
-                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+                "when": "notebookType == bashbook && notebookCellType == code"
             },
             {
                 "command": "bashbook.cell.clearAndEdit",
                 "key": "shift+backspace",
-                "when": "notebookCellListFocused || editorTextFocus && inputFocus && notebookEditorFocused"
+                "when": "notebookType == bashbook && notebookCellType == code"
             }
         ],
         "menus": {
@@ -80,6 +77,14 @@
                 {
                     "command": "bashbook.cell.openOutputInNewFile",
                     "when": "false"
+                },
+                {
+                    "command": "bashbook.cell.executeAndClear",
+                    "when": "notebookType == bashbook && notebookCellType == code"
+                },
+                {
+                    "command": "bashbook.cell.clearAndEdit",
+                    "when": "notebookType == bashbook && notebookCellType == code"
                 }
             ],
             "file/newFile": [
