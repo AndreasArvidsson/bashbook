@@ -21,9 +21,7 @@ export const activate: ActivationFunction = (context) => {
     cols: number,
     element: HTMLElement
   ) => {
-    const term = new Terminal({
-      cols,
-    });
+    const term = new Terminal({ cols });
 
     term.onInput((data) => {
       postMessage({
@@ -34,14 +32,14 @@ export const activate: ActivationFunction = (context) => {
       });
     });
 
-    term.open(element);
-
     element.addEventListener("contextmenu", async () => {
       // TODO
       // const text = await vscode.env.clipboard.getText();
       const text = await clipboard.read();
       term.paste(text);
     });
+
+    term.open(element);
 
     return term;
   };
@@ -58,14 +56,20 @@ export const activate: ActivationFunction = (context) => {
     }
     const term = uriMap.get(cellUri)!;
 
-    term.writeData(data);
+    term.write(data);
   };
 
   const onFinishedMessage = (
-    { notebookUri, cellUri }: OutputMessageFinished,
+    { notebookUri, cellUri, data, cols }: OutputMessageFinished,
     element: HTMLElement
   ) => {
-    const term = uriMap.get(cellUri)!;
+    let term = uriMap.get(cellUri);
+
+    if (!term) {
+      term = new Terminal({ cols });
+      uriMap.set(cellUri, term);
+      term.write(data);
+    }
 
     term.open(element);
 
@@ -73,12 +77,12 @@ export const activate: ActivationFunction = (context) => {
     term.disableInput();
 
     // Resize number of columns (for next command) based on output element size
-    const cols = term.calcTermCols();
-    if (cols && term.cols !== cols) {
+    const newCols = term.calcTermCols();
+    if (newCols && term.cols !== newCols) {
       postMessage({
         type: "setCols",
         notebookUri,
-        cols,
+        cols: newCols,
       });
     }
   };

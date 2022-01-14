@@ -74,14 +74,14 @@ class Serializer implements vscode.NotebookSerializer {
         value: cell.value,
         metadata: cell.metadata,
         // TODO Store data as proper json instead of bytes
-        // executionSummary: cell.executionSummary,
-        // outputs: cell.outputs?.map((output) => ({
-        //   metadata: output.metadata,
-        //   items: output.items.map((item) => ({
-        //     mime: item.mime,
-        //     data: new TextDecoder().decode(item.data),
-        //   })),
-        // })),
+        executionSummary: cell.executionSummary,
+        outputs: cell.outputs?.map((output) => ({
+          metadata: output.metadata,
+          items: output.items.map((item) => ({
+            mime: item.mime,
+            data: new TextDecoder().decode(item.data),
+          })),
+        })),
       })),
     };
 
@@ -94,7 +94,7 @@ export function registerSerializer() {
     NOTEBOOK_TYPE,
     new Serializer(),
     {
-      transientOutputs: true,
+      // transientOutputs: true,
     }
   );
 }

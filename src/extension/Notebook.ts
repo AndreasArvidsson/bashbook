@@ -107,6 +107,7 @@ export default class Notebook {
     }
 
     const dataChunks: string[] = [];
+    const cols = this.pty.getCols();
     let firstCommand = true;
 
     const onData = (data: string) => {
@@ -119,8 +120,8 @@ export default class Notebook {
         notebookUri: this.notebookUri,
         cellUri,
         data,
+        cols,
         firstCommand,
-        cols: this.pty.getCols(),
       };
 
       firstCommand = false;
@@ -134,17 +135,20 @@ export default class Notebook {
     };
 
     const end = (success: boolean, cwd?: string) => {
+      const finishedData = dataChunks.join("");
       if (!firstCommand) {
         const json: OutputMessageFinished = {
           type: "finished",
           notebookUri: this.notebookUri,
           cellUri,
+          data: finishedData,
+          cols,
         };
         execution.replaceOutput(
           new vscode.NotebookCellOutput([
             vscode.NotebookCellOutputItem.json(json, MIME_BASHBOOK),
             vscode.NotebookCellOutputItem.text(
-              dataChunks.join("\n").replace(ansiRegex, "").trimEnd(),
+              finishedData.replace(ansiRegex, "").trimEnd(),
               MIME_PLAINTEXT
             ),
           ])

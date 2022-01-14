@@ -25,8 +25,8 @@ export default class Terminal extends xterm.Terminal {
     });
   }
 
-  writeData(data: string) {
-    this.write(data);
+  write(data: string) {
+    super.write(data);
     this.dataContent += data;
 
     // Resize number of rows based on actual data content

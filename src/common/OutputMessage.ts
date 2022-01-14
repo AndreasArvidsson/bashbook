@@ -11,6 +11,8 @@ export interface OutputMessageFinished {
   type: "finished";
   notebookUri: string;
   cellUri: string;
+  data: string;
+  cols: number;
 }
 
 export type OutputMessage = OutputMessageData | OutputMessageFinished;
