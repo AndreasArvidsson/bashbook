@@ -47,6 +47,11 @@
                 "title": "BashBook: Clear cell content and edit"
             },
             {
+                "command": "bashbook.cell.copyOutput",
+                "title": "BashBook: Copy cell output",
+                "shortTitle": "Copy cell output"
+            },
+            {
                 "command": "bashbook.cell.openOutputInNewFile",
                 "title": "BashBook: Open cell output in new file",
                 "shortTitle": "Open cell output"
@@ -67,6 +72,14 @@
         "menus": {
             "commandPalette": [
                 {
+                    "command": "bashbook.cell.executeAndClear",
+                    "when": "notebookType == bashbook && notebookCellType == code"
+                },
+                {
+                    "command": "bashbook.cell.clearAndEdit",
+                    "when": "notebookType == bashbook && notebookCellType == code"
+                },
+                {
                     "command": "bashbook.openAllOutputsInNewFile",
                     "when": "false"
                 },
@@ -79,12 +92,8 @@
                     "when": "false"
                 },
                 {
-                    "command": "bashbook.cell.executeAndClear",
-                    "when": "notebookType == bashbook && notebookCellType == code"
-                },
-                {
-                    "command": "bashbook.cell.clearAndEdit",
-                    "when": "notebookType == bashbook && notebookCellType == code"
+                    "command": "bashbook.cell.copyOutput",
+                    "when": "false"
                 }
             ],
             "file/newFile": [
@@ -105,6 +114,11 @@
                 }
             ],
             "notebook/cell/title": [
+                {
+                    "command": "bashbook.cell.copyOutput",
+                    "group": "z_commands",
+                    "when": "notebookType == bashbook && notebookCellType == code && notebookCellHasOutputs"
+                },
                 {
                     "command": "bashbook.cell.openOutputInNewFile",
                     "group": "z_commands",

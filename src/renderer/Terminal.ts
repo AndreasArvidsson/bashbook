@@ -19,9 +19,13 @@ export default class Terminal extends xterm.Terminal {
     super(Object.assign({}, DEFAULT_OPTIONS, options));
 
     this.onSelectionChange(async () => {
-      // TODO
-      // await vscode.env.clipboard.writeText(this.getSelection());
-      await clipboard.write(this.getSelection());
+      const selection = this.getSelection().trim();
+      if (selection) {
+        // TODO
+        // await vscode.env.clipboard.writeText(this.getSelection());
+        await clipboard.write(selection);
+      }
+      1;
     });
   }
 

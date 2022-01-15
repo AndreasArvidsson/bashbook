@@ -107,6 +107,10 @@ const cellOpenOutputInNewFile = async (cell: vscode.NotebookCell) => {
   await vscode.commands.executeCommand("vscode.open", newDocument.uri);
 };
 
+const cellCopyOutput = async (cell: vscode.NotebookCell) => {
+  await vscode.env.clipboard.writeText(getCellPlainTextOutput(cell));
+};
+
 export default (graph: Graph) =>
   vscode.Disposable.from(
     registerCommand("newNotebook", newNotebook),
@@ -116,6 +120,7 @@ export default (graph: Graph) =>
     ),
     registerCommand("cell.executeAndClear", cellExecuteAndClear),
     registerCommand("cell.clearAndEdit", cellClearAndEdit),
+    registerCommand("cell.copyOutput", cellCopyOutput),
     registerCommand("cell.openOutputInNewFile", cellOpenOutputInNewFile)
   );
 
