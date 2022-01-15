@@ -3,23 +3,41 @@ import Parser = require("web-tree-sitter");
 import { LANGUAGE, MIME_PLAINTEXT, NOTEBOOK_TYPE } from "./Constants";
 import { Graph } from "./typings/types";
 
+const cellExecuteAndSelect = async () => {
+  await vscode.commands.executeCommand(
+    "notebook.cell.executeAndFocusContainer"
+  );
+  await cellSelect(false);
+};
+
 const cellExecuteAndClear = async () => {
   await vscode.commands.executeCommand(
     "notebook.cell.executeAndFocusContainer"
   );
-  await cellClearAndEdit();
+  await cellSelect(true);
 };
 
-const cellClearAndEdit = async () => {
+const cellClearAndEdit = () => cellSelect(true);
+
+const cellSelect = async (remove: boolean) => {
   await vscode.commands.executeCommand("notebook.cell.edit");
   const editor = vscode.window.activeTextEditor;
-  await editor?.edit((editBuilder) => {
-    const firstLine = editor.document.lineAt(0);
-    const lastLine = editor.document.lineAt(editor.document.lineCount - 1);
-    editBuilder.delete(
-      new vscode.Range(firstLine.range.start, lastLine.range.end)
-    );
-  });
+  if (!editor) {
+    return;
+  }
+  const firstLine = editor.document.lineAt(0);
+  const lastLine = editor.document.lineAt(editor.document.lineCount - 1);
+  const selection = new vscode.Selection(
+    firstLine.range.start,
+    lastLine.range.end
+  );
+  if (remove) {
+    await editor.edit((editBuilder) => {
+      editBuilder.delete(selection);
+    });
+  } else {
+    editor.selections = [selection];
+  }
 };
 
 const newNotebook = async () => {
@@ -118,6 +136,7 @@ export default (graph: Graph) =>
     registerCommand("openNotebookAsMarkdown", (editor) =>
       openNotebookAsMarkdown(editor, graph)
     ),
+    registerCommand("cell.executeAndSelect", cellExecuteAndSelect),
     registerCommand("cell.executeAndClear", cellExecuteAndClear),
     registerCommand("cell.clearAndEdit", cellClearAndEdit),
     registerCommand("cell.copyOutput", cellCopyOutput),

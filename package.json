@@ -39,6 +39,10 @@
                 "shortTitle": "Open notebook as markdown"
             },
             {
+                "command": "bashbook.cell.executeAndSelect",
+                "title": "BashBook: Execute cell and select content"
+            },
+            {
                 "command": "bashbook.cell.executeAndClear",
                 "title": "BashBook: Execute cell and clear content"
             },
@@ -71,6 +75,10 @@
         ],
         "menus": {
             "commandPalette": [
+                {
+                    "command": "bashbook.cell.executeAndSelect",
+                    "when": "notebookType == bashbook && notebookCellType == code"
+                },
                 {
                     "command": "bashbook.cell.executeAndClear",
                     "when": "notebookType == bashbook && notebookCellType == code"
