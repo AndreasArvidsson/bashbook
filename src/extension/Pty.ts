@@ -62,7 +62,7 @@ export default class Pty {
   writeCommand(command: string, onData: (data: string) => void) {
     return new Promise<Result>((resolve, reject) => {
       const parser = new ParserBuffer();
-      let waitingForCommand = command;
+      let waitingForNl = command.split("\n").length;
       let firstData = true;
       let ps1State = 0;
       let ps1NextCallback = () => {};
@@ -71,40 +71,22 @@ export default class Pty {
 
       // Don't print command when it's echoed back
       const parseCommand = () => {
-        if (waitingForCommand.startsWith("\n")) {
-          const i = parser.indexOf(PS2);
-          if (i > -1) {
-            waitingForCommand = waitingForCommand.substring(1);
-            parser.advance(i + PS2.length);
-          }
-        }
-        waitingForCommand = parser.match(waitingForCommand);
-
-        // We're both waiting for command and have data in the parser buffer
-        // Something has gone wrong with the parsing of the command. Probably due to control characters.
-        if (
-          waitingForCommand &&
-          !parser.isEmpty() &&
-          !waitingForCommand.startsWith("\n")
-        ) {
-          console.error(
-            `Waiting for command with data in parser buffer\n'${parser.get()}'`
-          );
-
-          // Check if the buffer is starting with PS1
-          let preLength = parser.length();
+        const indexNl = parser.indexOf("\n");
+        const indexUUID = parser.indexOf(UUID);
+        if (indexUUID > -1 && (indexNl < 0 || indexUUID < indexNl)) {
           parseCallback = parsePS1;
+          ps1NextCallback = parseCommand;
           parsePS1();
-          parseCallback = parseCommand;
-          // Couldn't parse PS1. Just skip
-          if (parser.length() > preLength - UUID.length) {
-            console.error("Buffer was NOT starting with PS1");
-            parser.advance(waitingForCommand.length);
-            waitingForCommand = "";
-          }
         }
 
-        if (!waitingForCommand) {
+        if (indexNl > -1) {
+          parser.advance(indexNl + 1);
+          --waitingForNl;
+        } else {
+          return;
+        }
+
+        if (!waitingForNl) {
           parseCallback = parseData;
         }
 
