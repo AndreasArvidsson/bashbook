@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import Parser = require("web-tree-sitter");
 import { LANGUAGE, MIME_PLAINTEXT, NOTEBOOK_TYPE } from "./Constants";
 import { Graph } from "./typings/types";
 
@@ -82,14 +81,10 @@ const openNotebookAsMarkdown = async (editor: NotebookEditor, graph: Graph) => {
   }
 
   const parseCodeCell = (cell: vscode.NotebookCell) => {
-    const commands = graph.getCommandLines(cell.document);
+    const commands = graph.parser.getCommandTextWithPrefix(cell.document);
     const output = getCellPlainTextOutput(cell);
     let content = "```bash\n";
-    if (commands.length) {
-      content += commands.map((command) => "$ " + command).join("");
-    } else {
-      content += "$";
-    }
+    content += commands || "$";
     if (output) {
       content += `\n\n${output}`;
     }

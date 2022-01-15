@@ -1,6 +1,6 @@
 import { commands } from "vscode";
 import { IPty, spawn } from "node-pty";
-import Parser from "./util/Parser";
+import ParserBuffer from "./util/ParserBuffer";
 
 const CTRL_C = "\x03";
 const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";
@@ -61,7 +61,7 @@ export default class Pty {
 
   writeCommand(command: string, onData: (data: string) => void) {
     return new Promise<Result>((resolve, reject) => {
-      const parser = new Parser();
+      const parser = new ParserBuffer();
       let waitingForCommand = command;
       let firstData = true;
       let ps1State = 0;

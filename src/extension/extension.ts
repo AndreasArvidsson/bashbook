@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { ExtensionMessage } from "../common/ExtensionMessage";
 import { getTreeSitterApi } from "./util/treeSitter";
-import getCommandLines from "./util/getCommandLines";
 import { Graph } from "./typings/types";
 import { createProfile } from "./profiles/Profile";
 import { RENDERER_ID } from "./Constants";
@@ -9,10 +8,12 @@ import registerCommands from "./commandProvider";
 import registerLanguageProvider from "./languageProvider";
 import Controller from "./Controller";
 import { registerSerializer } from "./Serializer";
+import CommandParser from "./util/CommandParser";
 
 export async function activate(context: vscode.ExtensionContext) {
   const { getTree } = await getTreeSitterApi();
   const profile = createProfile();
+  const parser = new CommandParser(getTree);
 
   const {
     disposable: languageDisposable,
@@ -24,7 +25,7 @@ export async function activate(context: vscode.ExtensionContext) {
     profile,
     historyPush,
     setCWD,
-    getCommandLines: (document) => getCommandLines(getTree, document),
+    parser,
   };
 
   const controller = new Controller(graph);

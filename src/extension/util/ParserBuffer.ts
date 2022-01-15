@@ -1,4 +1,4 @@
-export default class Parser {
+export default class ParserBuffer {
   private buffer = "";
 
   append(data: string) {

@@ -44,9 +44,7 @@ export default class Notebook {
     execution.start(Date.now());
     await execution.clearOutput();
 
-    const commands = this.graph
-      .getCommandLines(execution.cell.document)
-      .map((command) => command.trim());
+    const commands = this.graph.parser.getCommandLines(execution.cell.document);
 
     if (commands.length === 0) {
       execution.end(true, Date.now());
