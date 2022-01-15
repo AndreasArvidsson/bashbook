@@ -9,6 +9,10 @@ export default class ParserBuffer {
     return this.buffer;
   }
 
+  length() {
+    return this.buffer.length;
+  }
+
   isEmpty() {
     return this.buffer.length === 0;
   }

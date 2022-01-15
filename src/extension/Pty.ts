@@ -65,6 +65,7 @@ export default class Pty {
       let waitingForCommand = command;
       let firstData = true;
       let ps1State = 0;
+      let ps1NextCallback = () => {};
       let errorCode: number;
       let cwd: string;
 
@@ -89,7 +90,18 @@ export default class Pty {
           console.error(
             `Waiting for command with data in parser buffer\n'${parser.get()}'`
           );
-          waitingForCommand = "";
+
+          // Check if the buffer is starting with PS1
+          let preLength = parser.length();
+          parseCallback = parsePS1;
+          parsePS1();
+          parseCallback = parseCommand;
+          // Couldn't parse PS1. Just skip
+          if (parser.length() > preLength - UUID.length) {
+            console.error("Buffer was NOT starting with PS1");
+            parser.advance(waitingForCommand.length);
+            waitingForCommand = "";
+          }
         }
 
         if (!waitingForCommand) {
@@ -120,6 +132,8 @@ export default class Pty {
 
         if (uuidMatch) {
           parseCallback = parsePS1;
+          ps1State = 0;
+          ps1NextCallback = parseFinished;
           parseCallback();
         }
       };
@@ -137,18 +151,21 @@ export default class Pty {
           errorCode = Number.parseInt(parser.read(index));
         } else {
           cwd = parser.read(index);
-          const result = { errorCode, cwd };
-          disposable.dispose();
-          if (errorCode === 0) {
-            resolve(result);
-          } else {
-            reject(result);
-          }
+          parseCallback = ps1NextCallback;
         }
-
         parser.match("|");
         ++ps1State;
-        parsePS1();
+        parseCallback();
+      };
+
+      const parseFinished = () => {
+        const result = { errorCode, cwd };
+        disposable.dispose();
+        if (errorCode === 0) {
+          resolve(result);
+        } else {
+          reject(result);
+        }
       };
 
       let parseCallback = parseCommand;
