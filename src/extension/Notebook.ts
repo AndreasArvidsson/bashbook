@@ -5,7 +5,7 @@ import {
   OutputMessageExecuting,
   OutputMessageCompleted,
 } from "../common/OutputMessage";
-import ansiRegex from "./util/ansiRegex";
+import { ansiRegex } from "./util/ansiRegex";
 import { MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
 import updateCommand from "./util/updateCommandForVariables";
 import { Graph } from "./typings/types";

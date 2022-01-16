@@ -1,6 +1,6 @@
 // https://raw.githubusercontent.com/chalk/ansi-regex/main/index.js
 
-function ansiRegex({ onlyFirst = false } = {}) {
+function createAnsiRegex({ onlyFirst = false } = {}) {
   const pattern = [
     "(\\[\\d*[A-Z])",
     "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
@@ -10,4 +10,5 @@ function ansiRegex({ onlyFirst = false } = {}) {
   return new RegExp(pattern, onlyFirst ? undefined : "g");
 }
 
-export default ansiRegex();
+export const ansiRegex = createAnsiRegex();
+export const ansiRegexLeading = createAnsiRegex({ onlyFirst: true });

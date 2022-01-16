@@ -1,3 +1,5 @@
+import { ansiRegexLeading } from "./ansiRegex";
+
 export default class ParserBuffer {
   private buffer = "";
 
@@ -5,8 +7,12 @@ export default class ParserBuffer {
     this.buffer += data;
   }
 
-  get() {
-    return this.buffer;
+  clear() {
+    this.buffer = "";
+  }
+
+  get(index?: number) {
+    return index == null ? this.buffer : this.buffer[index];
   }
 
   length() {
@@ -21,6 +27,17 @@ export default class ParserBuffer {
     return this.buffer.indexOf(data);
   }
 
+  indexOfNl() {
+    const i = this.buffer.indexOf("\n");
+    if (i < 0) {
+      return null;
+    }
+    return {
+      index: this.buffer[i - 1] === "\r" ? i - 1 : i,
+      indexAfter: i + 1,
+    };
+  }
+
   match(data: string) {
     const [bufferI, dataI] = this.lookahead(data);
     this.buffer = this.buffer.substring(bufferI);
@@ -30,6 +47,7 @@ export default class ParserBuffer {
   lookahead(data: string) {
     let bufferI = 0;
     let dataI = 0;
+
     while (bufferI < this.buffer.length && dataI < data.length) {
       const bufferChar = this.buffer[bufferI];
       if (bufferChar !== data[dataI]) {
@@ -62,10 +80,8 @@ export default class ParserBuffer {
   }
 
   trimLeadingAnsiAndNl() {
-    this.buffer = this.buffer.replace(/^(\[\d*[A-Z])?\r?\n?/, "");
-  }
-
-  trimAnsiAndNl() {
-    this.buffer = this.buffer.replace(/(\[\d*[A-Z])?\r?\n?/g, "");
+    this.buffer = this.buffer
+      .replace(ansiRegexLeading, "")
+      .replace(/^\r?\n?/, "");
   }
 }

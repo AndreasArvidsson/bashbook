@@ -47,8 +47,11 @@ export default class Pty {
   }
 
   setCols(cols: number) {
-    this.pty.resize(cols, ROWS);
-    this.pty.write("\r");
+    cols = Math.max(UUID.length, cols);
+    if (cols !== this.pty.cols) {
+      this.pty.resize(cols, ROWS);
+      this.pty.write("\r");
+    }
   }
 
   write(data: string) {
@@ -71,17 +74,24 @@ export default class Pty {
 
       // Don't print command when it's echoed back
       const parseCommand = () => {
-        const indexNl = parser.indexOf("\n");
+        let indexNl = parser.indexOfNl();
         const indexUUID = parser.indexOf(UUID);
-        if (indexUUID > -1 && (indexNl < 0 || indexUUID < indexNl)) {
+        if (indexUUID > -1 && (!indexNl || indexUUID < indexNl.index)) {
           parseCallback = parsePS1;
           ps1NextCallback = parseCommand;
           parsePS1();
         }
 
-        if (indexNl > -1) {
-          parser.advance(indexNl + 1);
-          --waitingForNl;
+        if (indexNl) {
+          parser.trimLeadingAnsiAndNl();
+          indexNl = parser.indexOfNl();
+          const nlForCol = indexNl!.index === this.pty.cols;
+          parser.advance(indexNl!.indexAfter);
+
+          // Only decrease waiting if the new line was because of the input and not because of the column width
+          if (!nlForCol) {
+            --waitingForNl;
+          }
         } else {
           return;
         }
@@ -126,9 +136,8 @@ export default class Pty {
         if (index < 1) {
           return;
         }
-        parser.trimAnsiAndNl();
         if (ps1State === 0) {
-          parser.advance(UUID.length);
+          parser.advance(index);
         } else if (ps1State === 1) {
           errorCode = Number.parseInt(parser.read(index));
         } else {
@@ -157,6 +166,7 @@ export default class Pty {
         parseCallback();
       });
 
+      parser.clear();
       this.pty.write(`${command}\r`);
     });
   }
