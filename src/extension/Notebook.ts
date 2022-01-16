@@ -11,10 +11,17 @@ import updateCommand from "./util/updateCommandForVariables";
 import { Graph } from "./typings/types";
 import notebookDirectory from "./util/getNotebookDirectory";
 
+export interface ExecutionOptions {
+  noOutput?: boolean;
+}
+
 interface CommandExecution {
   command: string;
   execution: vscode.NotebookCellExecution;
   cellUri: string;
+  options: ExecutionOptions;
+  resolve?: (value: string) => void;
+  reject?: (value: string) => void;
 }
 
 export default class Notebook {
@@ -39,7 +46,12 @@ export default class Notebook {
     this.pty.dispose();
   }
 
-  async doExecution(execution: vscode.NotebookCellExecution) {
+  async doExecution(
+    execution: vscode.NotebookCellExecution,
+    options: ExecutionOptions = {},
+    resolve?: (value: string) => void,
+    reject?: (value: string) => void
+  ) {
     execution.executionOrder = ++this.executionOrder;
     execution.start(Date.now());
     await execution.clearOutput();
@@ -67,6 +79,9 @@ export default class Notebook {
       command,
       execution,
       cellUri,
+      options,
+      resolve,
+      reject,
     });
 
     this.graph.historyPush(command);
@@ -79,7 +94,9 @@ export default class Notebook {
     }
 
     const commandExecution = this.executionQueue.shift()!;
-    const { command, execution, cellUri } = commandExecution;
+    const { command, execution, cellUri, options, resolve, reject } =
+      commandExecution;
+    const { noOutput } = options;
 
     // Execution is already canceled
     if (execution.token.isCancellationRequested) {
@@ -113,6 +130,8 @@ export default class Notebook {
         return;
       }
 
+      dataChunks.push(data);
+
       const json: OutputMessageExecuting = {
         type: "executing",
         notebookUri: this.notebookUri,
@@ -124,7 +143,6 @@ export default class Notebook {
 
       firstCommand = false;
 
-      dataChunks.push(data);
       execution.appendOutput(
         new vscode.NotebookCellOutput([
           vscode.NotebookCellOutputItem.json(json, MIME_BASHBOOK),
@@ -134,7 +152,11 @@ export default class Notebook {
 
     const end = (success: boolean, cwd?: string) => {
       const finishedData = dataChunks.join("");
-      if (!firstCommand) {
+      const plaintext = finishedData.replace(ansiRegex, "").trimEnd();
+
+      if (noOutput) {
+        execution.clearOutput();
+      } else if (!firstCommand) {
         const json: OutputMessageCompleted = {
           type: "completed",
           notebookUri: this.notebookUri,
@@ -145,20 +167,27 @@ export default class Notebook {
         execution.replaceOutput(
           new vscode.NotebookCellOutput([
             vscode.NotebookCellOutputItem.json(json, MIME_BASHBOOK),
-            vscode.NotebookCellOutputItem.text(
-              finishedData.replace(ansiRegex, "").trimEnd(),
-              MIME_PLAINTEXT
-            ),
+            vscode.NotebookCellOutputItem.text(plaintext, MIME_PLAINTEXT),
           ])
         );
       }
 
       execution.end(success, Date.now());
+
       if (cwd) {
         this.graph.setCWD(cwd);
       }
 
       this.isExecuting = undefined;
+
+      if (success) {
+        if (resolve) {
+          resolve(plaintext);
+        }
+      } else if (reject) {
+        reject(plaintext);
+      }
+
       this.runExecutionQueue();
     };
 

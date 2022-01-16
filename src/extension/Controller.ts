@@ -6,7 +6,7 @@ import {
   NOTEBOOK_TYPE,
 } from "./Constants";
 import { Graph } from "./typings/types";
-import Notebook from "./Notebook";
+import Notebook, { ExecutionOptions } from "./Notebook";
 
 export default class Controller {
   private readonly controller: vscode.NotebookController;
@@ -20,6 +20,7 @@ export default class Controller {
     );
     this.controller.supportedLanguages = [LANGUAGE];
     this.controller.supportsExecutionOrder = true;
+    this.doExecution = this.doExecution.bind(this);
     this.controller.executeHandler = this.executeHandler.bind(this);
     this.onDidOpenNotebookDocument = this.onDidOpenNotebookDocument.bind(this);
     this.onDidCloseNotebookDocument =
@@ -51,15 +52,24 @@ export default class Controller {
     this.notebooks.get(notebookUri)?.setCols(cols);
   }
 
-  private executeHandler(cells: vscode.NotebookCell[]) {
-    for (const cell of cells) {
-      this.doExecution(cell);
-    }
+  doExecution(cell: vscode.NotebookCell, options?: ExecutionOptions) {
+    return new Promise<string>((resolve, reject) => {
+      this.notebooks
+        .get(cell.notebook.uri.toString())!
+        .doExecution(
+          this.controller.createNotebookCellExecution(cell),
+          options,
+          resolve,
+          reject
+        );
+    });
   }
 
-  private doExecution(cell: vscode.NotebookCell) {
-    this.notebooks
-      .get(cell.notebook.uri.toString())!
-      .doExecution(this.controller.createNotebookCellExecution(cell));
+  private executeHandler(cells: vscode.NotebookCell[]) {
+    for (const cell of cells) {
+      this.notebooks
+        .get(cell.notebook.uri.toString())!
+        .doExecution(this.controller.createNotebookCellExecution(cell));
+    }
   }
 }

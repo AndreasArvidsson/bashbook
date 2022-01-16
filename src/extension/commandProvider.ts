@@ -1,43 +1,7 @@
 import * as vscode from "vscode";
 import { LANGUAGE, MIME_PLAINTEXT, NOTEBOOK_TYPE } from "./Constants";
-import { Graph } from "./typings/types";
-
-const cellExecuteAndSelect = async () => {
-  await vscode.commands.executeCommand(
-    "notebook.cell.executeAndFocusContainer"
-  );
-  await cellSelect(false);
-};
-
-const cellExecuteAndClear = async () => {
-  await vscode.commands.executeCommand(
-    "notebook.cell.executeAndFocusContainer"
-  );
-  await cellSelect(true);
-};
-
-const cellClearAndEdit = () => cellSelect(true);
-
-const cellSelect = async (remove: boolean) => {
-  await vscode.commands.executeCommand("notebook.cell.edit");
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
-    return;
-  }
-  const firstLine = editor.document.lineAt(0);
-  const lastLine = editor.document.lineAt(editor.document.lineCount - 1);
-  const selection = new vscode.Selection(
-    firstLine.range.start,
-    lastLine.range.end
-  );
-  if (remove) {
-    await editor.edit((editBuilder) => {
-      editBuilder.delete(selection);
-    });
-  } else {
-    editor.selections = [selection];
-  }
-};
+import { ExecutionOptions } from "./Notebook";
+import CommandParser from "./util/CommandParser";
 
 const newNotebook = async () => {
   const newNotebook = await vscode.workspace.openNotebookDocument(
@@ -49,31 +13,14 @@ const newNotebook = async () => {
   await vscode.commands.executeCommand("vscode.open", newNotebook.uri);
 };
 
-const openAllOutputsInNewFile = async () => {
-  const document = getActiveNotebookDocument();
-  if (!document) {
-    return;
-  }
-  const content = document
-    .getCells()
-    .map(getCellPlainTextOutput)
-    .filter(Boolean)
-    .join("\n\n----------\n\n");
-  const newDocument = await vscode.workspace.openTextDocument({
-    content,
-    language: "plaintext",
-  });
-  await vscode.commands.executeCommand("vscode.open", newDocument.uri);
-};
-
-const openNotebookAsMarkdown = async (graph: Graph) => {
+const openNotebookAsMarkdown = async (parser: CommandParser) => {
   const document = getActiveNotebookDocument();
   if (!document) {
     return;
   }
 
   const parseCodeCell = (cell: vscode.NotebookCell) => {
-    const commands = graph.parser.getCommandTextWithPrefix(cell.document);
+    const commands = parser.getCommandTextWithPrefix(cell.document);
     const output = getCellPlainTextOutput(cell);
     let content = "```bash\n";
     content += commands || "$";
@@ -104,6 +51,97 @@ const openNotebookAsMarkdown = async (graph: Graph) => {
   await vscode.commands.executeCommand("vscode.open", newDocument.uri);
 };
 
+const openAllOutputsInNewFile = async () => {
+  const document = getActiveNotebookDocument();
+  if (!document) {
+    return;
+  }
+  const content = document
+    .getCells()
+    .map(getCellPlainTextOutput)
+    .filter(Boolean)
+    .join("\n\n----------\n\n");
+  const newDocument = await vscode.workspace.openTextDocument({
+    content,
+    language: "plaintext",
+  });
+  await vscode.commands.executeCommand("vscode.open", newDocument.uri);
+};
+
+const cellExecuteAndSelect = async () => {
+  await vscode.commands.executeCommand("notebook.cell.execute");
+  await cellSelect(false);
+};
+
+const cellExecuteAndClear = async () => {
+  await vscode.commands.executeCommand("notebook.cell.execute");
+  await cellSelect(true);
+};
+
+const cellClearAndEdit = () => cellSelect(true);
+
+const cellSelect = async (remove: boolean) => {
+  await vscode.commands.executeCommand("notebook.cell.edit");
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return;
+  }
+  const selection = getRangeForDocument(editor);
+  if (remove) {
+    await editor.edit((editBuilder) => editBuilder.delete(selection));
+  } else {
+    editor.selections = [selection];
+  }
+};
+
+const executeWithMarkdownOutput = async (
+  doExecution: (
+    cell: vscode.NotebookCell,
+    options?: ExecutionOptions
+  ) => Promise<string>
+) => {
+  const editorInput = vscode.window.activeTextEditor;
+  const cellInput = getActiveCell();
+  if (!editorInput || !cellInput) {
+    return;
+  }
+
+  const cellBelow =
+    cellInput.index + 1 < cellInput.notebook.cellCount
+      ? cellInput.notebook.cellAt(cellInput.index + 1)
+      : null;
+  let cellOutput =
+    cellBelow && cellBelow.kind === vscode.NotebookCellKind.Markup
+      ? cellBelow
+      : null;
+
+  if (cellOutput) {
+    const editor = getEditorForCell(cellOutput);
+    if (editor) {
+      await editor.edit((editBuilder) => {
+        editBuilder.delete(getRangeForDocument(editor));
+      });
+    }
+  }
+
+  const plaintext = await doExecution(cellInput, { noOutput: true });
+  editorInput.selections = [getRangeForDocument(editorInput)];
+
+  if (!cellOutput) {
+    await vscode.commands.executeCommand(
+      "notebook.cell.insertMarkdownCellBelow"
+    );
+    cellOutput = cellInput.notebook.cellAt(cellInput.index + 1);
+  }
+
+  const editor = getEditorForCell(cellOutput);
+  if (editor) {
+    await editor.edit((editBuilder) => {
+      editBuilder.insert(new vscode.Position(0, 0), plaintext);
+    });
+  }
+};
+
 const cellOpenOutputInNewFile = async () => {
   const cell = getActiveCell();
   if (cell) {
@@ -122,19 +160,29 @@ const cellCopyOutput = async () => {
   }
 };
 
-export default (graph: Graph) =>
-  vscode.Disposable.from(
+export default (
+  parser: CommandParser,
+  doExecution: (
+    cell: vscode.NotebookCell,
+    options?: ExecutionOptions
+  ) => Promise<string>
+) => {
+  return vscode.Disposable.from(
     registerCommand("newNotebook", newNotebook),
-    registerCommand("openAllOutputsInNewFile", openAllOutputsInNewFile),
     registerCommand("openNotebookAsMarkdown", () =>
-      openNotebookAsMarkdown(graph)
+      openNotebookAsMarkdown(parser)
     ),
+    registerCommand("openAllOutputsInNewFile", openAllOutputsInNewFile),
     registerCommand("cell.executeAndSelect", cellExecuteAndSelect),
     registerCommand("cell.executeAndClear", cellExecuteAndClear),
+    registerCommand("cell.executeWithMarkdownOutput", () =>
+      executeWithMarkdownOutput(doExecution)
+    ),
     registerCommand("cell.clearAndEdit", cellClearAndEdit),
     registerCommand("cell.copyOutput", cellCopyOutput),
     registerCommand("cell.openOutputInNewFile", cellOpenOutputInNewFile)
   );
+};
 
 function registerCommand(command: string, callback: (...args: any[]) => any) {
   return vscode.commands.registerCommand(
@@ -172,4 +220,17 @@ function getActiveCell() {
   return getNotebookFromCellDocument(editor.document)
     ?.getCells()
     .find((cell) => cell.document === editor.document);
+}
+
+function getEditorForCell(cell: vscode.NotebookCell) {
+  return vscode.window.visibleTextEditors.find(
+    (editor) => editor.document === cell.document
+  );
+}
+
+function getRangeForDocument(editor: vscode.TextEditor) {
+  return new vscode.Selection(
+    new vscode.Position(0, 0),
+    editor.document.lineAt(editor.document.lineCount - 1).range.end
+  );
 }

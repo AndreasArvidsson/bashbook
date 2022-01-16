@@ -29,14 +29,14 @@
                 "shortTitle": "Bash Notebook"
             },
             {
-                "command": "bashbook.openAllOutputsInNewFile",
-                "title": "BashBook: Open all outputs in new file",
-                "shortTitle": "Open all outputs"
-            },
-            {
                 "command": "bashbook.openNotebookAsMarkdown",
                 "title": "BashBook: Open notebook as markdown",
                 "shortTitle": "Open notebook as markdown"
+            },
+            {
+                "command": "bashbook.openAllOutputsInNewFile",
+                "title": "BashBook: Open all outputs in new file",
+                "shortTitle": "Open all outputs"
             },
             {
                 "command": "bashbook.cell.executeAndSelect",
@@ -45,6 +45,10 @@
             {
                 "command": "bashbook.cell.executeAndClear",
                 "title": "BashBook: Execute cell and clear content"
+            },
+            {
+                "command": "bashbook.cell.executeWithMarkdownOutput",
+                "title": "BashBook: Execute and show output in below markdown cell"
             },
             {
                 "command": "bashbook.cell.clearAndEdit",
@@ -61,20 +65,16 @@
                 "shortTitle": "Open cell output"
             }
         ],
-        "keybindings": [
-            {
-                "command": "bashbook.cell.executeAndClear",
-                "key": "ctrl+backspace",
-                "when": "notebookType == bashbook && notebookCellType == code"
-            },
-            {
-                "command": "bashbook.cell.clearAndEdit",
-                "key": "shift+backspace",
-                "when": "notebookType == bashbook && notebookCellType == code"
-            }
-        ],
         "menus": {
             "commandPalette": [
+                {
+                    "command": "bashbook.openNotebookAsMarkdown",
+                    "when": "notebookType == bashbook"
+                },
+                {
+                    "command": "bashbook.openAllOutputsInNewFile",
+                    "when": "notebookType == bashbook && notebookHasOutputs"
+                },
                 {
                     "command": "bashbook.cell.executeAndSelect",
                     "when": "notebookType == bashbook && notebookCellType == code"
@@ -84,16 +84,12 @@
                     "when": "notebookType == bashbook && notebookCellType == code"
                 },
                 {
-                    "command": "bashbook.cell.clearAndEdit",
+                    "command": "bashbook.cell.executeWithMarkdownOutput",
                     "when": "notebookType == bashbook && notebookCellType == code"
                 },
                 {
-                    "command": "bashbook.openNotebookAsMarkdown",
-                    "when": "notebookType == bashbook"
-                },
-                {
-                    "command": "bashbook.openAllOutputsInNewFile",
-                    "when": "notebookType == bashbook && notebookHasOutputs"
+                    "command": "bashbook.cell.clearAndEdit",
+                    "when": "notebookType == bashbook && notebookCellType == code"
                 },
                 {
                     "command": "bashbook.cell.openOutputInNewFile",

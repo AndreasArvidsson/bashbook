@@ -14,11 +14,15 @@ BashBook the way you would any normal notebook
 
 ## Commands
 
-- `ctrl+backspace`  
-   Execute cell and clear content
-
-- `shift+backspace`  
-  Clear cell content and edit
+- Create new Bash Notebook
+- Open notebook as markdown
+- Open all outputs in new file
+- Execute cell and select content
+- Execute cell and clear content
+- Execute and show output in below markdown cell
+- Clear cell content and edit
+- Copy cell output
+- Open cell output in new file
 
 ## Details
 

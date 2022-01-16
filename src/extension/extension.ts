@@ -34,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
     languageDisposable,
     controller,
     registerSerializer(),
-    registerCommands(graph),
+    registerCommands(parser, controller.doExecution),
     vscode.workspace.onDidOpenNotebookDocument(
       controller.onDidOpenNotebookDocument
     ),
