@@ -49,12 +49,8 @@ const newNotebook = async () => {
   await vscode.commands.executeCommand("vscode.open", newNotebook.uri);
 };
 
-const openAllOutputsInNewFile = async (editor: NotebookEditor) => {
-  const document = vscode.workspace.notebookDocuments.find(
-    (notebook) =>
-      notebook.uri.toString() ===
-      editor?.notebookEditor?.notebookUri?.toString()
-  );
+const openAllOutputsInNewFile = async () => {
+  const document = getActiveNotebookDocument();
   if (!document) {
     return;
   }
@@ -70,12 +66,8 @@ const openAllOutputsInNewFile = async (editor: NotebookEditor) => {
   await vscode.commands.executeCommand("vscode.open", newDocument.uri);
 };
 
-const openNotebookAsMarkdown = async (editor: NotebookEditor, graph: Graph) => {
-  const document = vscode.workspace.notebookDocuments.find(
-    (notebook) =>
-      notebook.uri.toString() ===
-      editor?.notebookEditor?.notebookUri?.toString()
-  );
+const openNotebookAsMarkdown = async (graph: Graph) => {
+  const document = getActiveNotebookDocument();
   if (!document) {
     return;
   }
@@ -112,24 +104,30 @@ const openNotebookAsMarkdown = async (editor: NotebookEditor, graph: Graph) => {
   await vscode.commands.executeCommand("vscode.open", newDocument.uri);
 };
 
-const cellOpenOutputInNewFile = async (cell: vscode.NotebookCell) => {
-  const newDocument = await vscode.workspace.openTextDocument({
-    content: getCellPlainTextOutput(cell),
-    language: "plaintext",
-  });
-  await vscode.commands.executeCommand("vscode.open", newDocument.uri);
+const cellOpenOutputInNewFile = async () => {
+  const cell = getActiveCell();
+  if (cell) {
+    const newDocument = await vscode.workspace.openTextDocument({
+      content: getCellPlainTextOutput(cell),
+      language: "plaintext",
+    });
+    await vscode.commands.executeCommand("vscode.open", newDocument.uri);
+  }
 };
 
-const cellCopyOutput = async (cell: vscode.NotebookCell) => {
-  await vscode.env.clipboard.writeText(getCellPlainTextOutput(cell));
+const cellCopyOutput = async () => {
+  const cell = getActiveCell();
+  if (cell) {
+    await vscode.env.clipboard.writeText(getCellPlainTextOutput(cell));
+  }
 };
 
 export default (graph: Graph) =>
   vscode.Disposable.from(
     registerCommand("newNotebook", newNotebook),
     registerCommand("openAllOutputsInNewFile", openAllOutputsInNewFile),
-    registerCommand("openNotebookAsMarkdown", (editor) =>
-      openNotebookAsMarkdown(editor, graph)
+    registerCommand("openNotebookAsMarkdown", () =>
+      openNotebookAsMarkdown(graph)
     ),
     registerCommand("cell.executeAndSelect", cellExecuteAndSelect),
     registerCommand("cell.executeAndClear", cellExecuteAndClear),
@@ -157,8 +155,21 @@ function getCellPlainTextOutput(cell: vscode.NotebookCell) {
   return data.join("\n");
 }
 
-interface NotebookEditor {
-  notebookEditor?: {
-    notebookUri?: vscode.Uri;
-  };
+function getNotebookFromCellDocument(document: vscode.TextDocument) {
+  return (document as any).notebook as vscode.NotebookDocument | undefined;
+}
+
+function getActiveNotebookDocument() {
+  const editor = vscode.window.activeTextEditor;
+  return editor ? getNotebookFromCellDocument(editor.document) : undefined;
+}
+
+function getActiveCell() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return;
+  }
+  return getNotebookFromCellDocument(editor.document)
+    ?.getCells()
+    .find((cell) => cell.document === editor.document);
 }

@@ -88,20 +88,20 @@
                     "when": "notebookType == bashbook && notebookCellType == code"
                 },
                 {
-                    "command": "bashbook.openAllOutputsInNewFile",
-                    "when": "false"
+                    "command": "bashbook.openNotebookAsMarkdown",
+                    "when": "notebookType == bashbook"
                 },
                 {
-                    "command": "bashbook.openNotebookAsMarkdown",
-                    "when": "false"
+                    "command": "bashbook.openAllOutputsInNewFile",
+                    "when": "notebookType == bashbook && notebookHasOutputs"
                 },
                 {
                     "command": "bashbook.cell.openOutputInNewFile",
-                    "when": "false"
+                    "when": "notebookType == bashbook && notebookCellType == code && notebookCellHasOutputs"
                 },
                 {
                     "command": "bashbook.cell.copyOutput",
-                    "when": "false"
+                    "when": "notebookType == bashbook && notebookCellType == code && notebookCellHasOutputs"
                 }
             ],
             "file/newFile": [
@@ -111,14 +111,14 @@
             ],
             "notebook/toolbar": [
                 {
-                    "command": "bashbook.openAllOutputsInNewFile",
-                    "group": "z_commands",
-                    "when": "notebookType == bashbook && notebookHasOutputs"
-                },
-                {
                     "command": "bashbook.openNotebookAsMarkdown",
                     "group": "z_commands",
                     "when": "notebookType == bashbook"
+                },
+                {
+                    "command": "bashbook.openAllOutputsInNewFile",
+                    "group": "z_commands",
+                    "when": "notebookType == bashbook && notebookHasOutputs"
                 }
             ],
             "notebook/cell/title": [
