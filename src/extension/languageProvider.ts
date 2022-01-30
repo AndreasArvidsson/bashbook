@@ -31,9 +31,9 @@ export class BashCompletionItemProvider
 
   historyPush(value: string) {
     if (!this.map.has(value)) {
-      const item = {
+      const item: vscode.CompletionItem = {
         label: value,
-        kind: vscode.CompletionItemKind.Text,
+        kind: vscode.CompletionItemKind.Event,
       };
       this.map.set(value, item);
       this.history.push(item);
