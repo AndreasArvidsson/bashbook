@@ -55,6 +55,10 @@ Tries to set CWD in following order
 
 ```
 npm install
+
+# Run after each install
+node_modules/.bin/electron-rebuild -w node-pty
+
 npm run compile
 ```
 
