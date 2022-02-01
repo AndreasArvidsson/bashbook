@@ -62,6 +62,11 @@ node_modules/.bin/electron-rebuild -w node-pty
 npm run compile
 ```
 
+### Dependencies
+
+Due to node-pty we have platform specific dependencies  
+[node-pty dependencies](https://github.com/Microsoft/node-pty#dependencies)
+
 ### Components
 
 - node-pty
