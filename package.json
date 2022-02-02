@@ -187,8 +187,7 @@
         "compile:renderer": "webpack --mode production",
         "watch": "concurrently -r \"npm:watch:*\"",
         "watch:extension": "tsc --build --watch ./src/extension",
-        "watch:renderer": "webpack --mode development --watch",
-        "vscode:publish": "vsce publish --target win32-x64 linux-x64 darwin-x64 darwin-arm64"
+        "watch:renderer": "webpack --mode development --watch"
     },
     "extensionDependencies": [
         "pokey.parse-tree"
