@@ -34,7 +34,7 @@ export default class Pty {
     this.pid = this.pty.pid;
 
     // Set prompt
-    this.pty.write(`export PS1="${UUID}|\\$?|\\w|"\r`);
+    this.pty.write(`export PS1="${UUID}|\\$?|$(pwd)|"\r`);
     this.pty.write(`export PS2="${PS2}"\r`);
   }
 
@@ -141,7 +141,7 @@ export default class Pty {
         } else if (ps1State === 1) {
           errorCode = Number.parseInt(parser.read(index));
         } else {
-          cwd = parser.read(index);
+          cwd = parser.read(index).replace(/\r?\n?/, "");
           parseCallback = ps1NextCallback;
         }
         parser.match("|");

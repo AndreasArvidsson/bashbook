@@ -26,7 +26,9 @@ export class BashCompletionItemProvider
   }
 
   setCWD(cwd: string) {
-    this.cwd = cwd.startsWith("~") ? tildeToPath(cwd) : cwd;
+    this.cwd = cwd.startsWith("~")
+      ? tildeToPath(cwd)
+      : this.profile.updateRootPath(cwd);
   }
 
   historyPush(value: string) {
