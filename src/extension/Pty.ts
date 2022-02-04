@@ -34,8 +34,8 @@ export default class Pty {
     this.pid = this.pty.pid;
 
     // Set prompt
-    this.pty.write(`export PS1="${UUID}|\\$?|$(pwd)|"\r`);
-    this.pty.write(`export PS2="${PS2}"\r`);
+    this.pty.write(`export PS1='${UUID}|$?|$(pwd)|'\r`);
+    this.pty.write(`export PS2='${PS2}'\r`);
   }
 
   dispose() {
@@ -132,16 +132,18 @@ export default class Pty {
 
       const parsePS1 = () => {
         // Each part of the PS1 ends with '|'
-        const index = parser.indexOf("|");
+        let index = parser.indexOf("|");
         if (index < 1) {
           return;
         }
+        parser.trimNl();
+        index = parser.indexOf("|");
         if (ps1State === 0) {
           parser.advance(index);
         } else if (ps1State === 1) {
           errorCode = Number.parseInt(parser.read(index));
         } else {
-          cwd = parser.read(index).replace(/\r?\n?/, "");
+          cwd = parser.read(index);
           parseCallback = ps1NextCallback;
         }
         parser.match("|");
