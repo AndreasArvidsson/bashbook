@@ -101,9 +101,8 @@ export class BashCompletionItemProvider
       characterDelta: -existingName.length,
     });
 
-    // TODO
-    console.log(absPath);
-    console.log(filteredFiles);
+    console.debug(`Path: ${absPath}`);
+    console.debug(filteredFiles);
 
     return filteredFiles.map((file) =>
       createFileCompletionItem(file, startPosition)
@@ -111,18 +110,60 @@ export class BashCompletionItemProvider
   }
 }
 
+class CodeLensProvider implements vscode.CodeLensProvider {
+  private disposable?: vscode.Disposable;
+  private cwd = "/";
+
+  register() {
+    this.dispose();
+    this.disposable = vscode.languages.registerCodeLensProvider(selector, this);
+  }
+
+  dispose() {
+    this.disposable?.dispose();
+  }
+
+  setCWD(cwd: string) {
+    if (this.cwd !== cwd) {
+      this.cwd = cwd;
+      console.log(cwd);
+      this.register();
+    }
+  }
+
+  provideCodeLenses(
+    document: vscode.TextDocument
+  ): vscode.ProviderResult<vscode.CodeLens[]> {
+    if (vscode.window.activeTextEditor?.document !== document) {
+      return null;
+    }
+    const topOfDocument = new vscode.Range(0, 0, 0, 0);
+    const command = { title: this.cwd, command: "" };
+    const codeLens = new vscode.CodeLens(topOfDocument, command);
+    return [codeLens];
+  }
+}
+
 export default (profile: Profile) => {
   const historyCompletionItemProvider = new BashCompletionItemProvider(profile);
+  const codeLensProvider = new CodeLensProvider();
   return {
     disposable: vscode.Disposable.from(
       vscode.languages.registerCompletionItemProvider(
         selector,
         historyCompletionItemProvider,
         ...BashCompletionItemProvider.triggerCharacters
+      ),
+      codeLensProvider,
+      vscode.window.onDidChangeActiveTextEditor(() =>
+        codeLensProvider.register()
       )
     ),
     historyPush: historyCompletionItemProvider.historyPush,
-    setCWD: historyCompletionItemProvider.setCWD,
+    setCWD: (cwd: string) => {
+      historyCompletionItemProvider.setCWD(cwd);
+      codeLensProvider.setCWD(cwd);
+    },
   };
 };
 

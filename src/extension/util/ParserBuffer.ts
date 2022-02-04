@@ -84,4 +84,8 @@ export default class ParserBuffer {
       .replace(ansiRegexLeading, "")
       .replace(/^\r?\n?/, "");
   }
+
+  trimNl() {
+    this.buffer = this.buffer.replace(/\r?\n?/g, "");
+  }
 }
