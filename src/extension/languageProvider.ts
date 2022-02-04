@@ -112,7 +112,10 @@ export class BashCompletionItemProvider
 
 class CodeLensProvider implements vscode.CodeLensProvider {
   private disposable?: vscode.Disposable;
-  private cwd = "/";
+  private cwd = "";
+  private cwdPretty = "";
+
+  constructor(private profile: Profile) {}
 
   register() {
     this.dispose();
@@ -126,7 +129,18 @@ class CodeLensProvider implements vscode.CodeLensProvider {
   setCWD(cwd: string) {
     if (this.cwd !== cwd) {
       this.cwd = cwd;
-      console.log(cwd);
+      if (vscode.workspace.workspaceFolders?.length) {
+        const workspacePath = path.resolve(
+          vscode.workspace.workspaceFolders[0].uri.fsPath
+        );
+        const workspaceParentPath = path.resolve(workspacePath, "..");
+        const updatedCwd = this.profile.updateRootPath(cwd);
+        const relativePath = path.relative(workspaceParentPath, updatedCwd);
+        const dirName = path.basename(workspacePath);
+        this.cwdPretty = relativePath.startsWith(dirName)
+          ? this.profile.nodeToShellPath(relativePath)
+          : cwd;
+      }
       this.register();
     }
   }
@@ -138,7 +152,7 @@ class CodeLensProvider implements vscode.CodeLensProvider {
       return null;
     }
     const topOfDocument = new vscode.Range(0, 0, 0, 0);
-    const command = { title: this.cwd, command: "" };
+    const command = { title: this.cwdPretty, command: "" };
     const codeLens = new vscode.CodeLens(topOfDocument, command);
     return [codeLens];
   }
@@ -146,7 +160,7 @@ class CodeLensProvider implements vscode.CodeLensProvider {
 
 export default (profile: Profile) => {
   const historyCompletionItemProvider = new BashCompletionItemProvider(profile);
-  const codeLensProvider = new CodeLensProvider();
+  const codeLensProvider = new CodeLensProvider(profile);
   return {
     disposable: vscode.Disposable.from(
       vscode.languages.registerCompletionItemProvider(

@@ -6,6 +6,14 @@ export default class ProfileGitBash extends ProfileBash {
     return "C:/Program Files/Git/bin/bash.exe";
   }
 
+  nodeToShellPath(path: string): string {
+    // c: => /c/
+    if (/^\[a-zA-Z]:/.test(path)) {
+      path = `/${path[0]}/${path.substring(2)}`;
+    }
+    return path.replace(/\\/, "/");
+  }
+
   updateRootPath(rootPath: string): string {
     // /c/ => c:
     if (/^\/[a-zA-Z]\//.test(rootPath)) {

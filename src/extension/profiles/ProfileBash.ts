@@ -12,6 +12,10 @@ export default class ProfileBash implements Profile {
     return path;
   }
 
+  nodeToShellPath(path: string): string {
+    return path;
+  }
+
   readHistory(): Promise<string[]> {
     return new Promise((resolve) => {
       const historyFile = path.resolve(os.homedir(), ".bash_history");
