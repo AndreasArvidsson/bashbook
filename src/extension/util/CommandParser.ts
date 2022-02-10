@@ -46,6 +46,8 @@ export default class CommandParser {
       case "command":
       case "declaration_command":
       case "list":
+      case "pipeline":
+      case "variable_assignment":
         return true;
     }
     return false;
