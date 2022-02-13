@@ -49,6 +49,10 @@ Tries to set CWD in following order
 1. Workspace directory
 1. User home directory
 
+## Problem with Ubuntu/Debian
+
+On a Ubuntu/Debian system you may get a `Cannot open resource with notebook editor` error if vscode is installed as a flatpack(Ubuntu Software). For BashBook to work correctly vscode needs to be installed with [apt install](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
+
 ## Build details
 
 ### Build local
@@ -57,7 +61,7 @@ Tries to set CWD in following order
 npm install
 
 # Run after each install
-node_modules/.bin/electron-rebuild -w node-pty
+node_modules/.bin/electron-rebuild -w nodepty
 
 npm run compile
 ```
