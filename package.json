@@ -149,7 +149,8 @@
                     "type": "string",
                     "enum": [
                         "Bash",
-                        "Git Bash"
+                        "Git Bash",
+                        "Csh"
                     ],
                     "default": "Bash",
                     "description": "Sets default values and behavior for the shell"

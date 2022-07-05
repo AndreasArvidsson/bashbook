@@ -18,13 +18,18 @@ export default class Pty {
   private pty: IPty;
 
   constructor(shell: string, cwd: string) {
-    this.pty = spawn(shell, [], {
-      name: "xterm-color",
-      cols: 80,
-      rows: ROWS,
-      cwd,
-      env: <{ [key: string]: string }>process.env,
-    });
+    try {
+      this.pty = spawn(shell, [], {
+        name: "xterm-color",
+        cols: 80,
+        rows: ROWS,
+        cwd,
+        env: <{ [key: string]: string }>process.env,
+      });
+    } catch (e) {
+      console.error(`failed to launch: ${shell}`);
+      throw e;
+    }
 
     this.pty.onExit(() => {
       console.debug("Exit");
@@ -34,8 +39,13 @@ export default class Pty {
     this.pid = this.pty.pid;
 
     // Set prompt
-    this.pty.write(`export PS1='${UUID}|$?|$(pwd)|'\r`);
-    this.pty.write(`export PS2='${PS2}'\r`);
+    if (shell.endsWith("csh")) {
+      this.pty.write('set prompt="' + UUID + '|`echo $status`|`pwd`|"\r');
+    }
+    else {
+      this.pty.write(`export PS1='${UUID}|$?|$(pwd)|'\r`);
+      this.pty.write(`export PS2='${PS2}'\r`);
+    }
   }
 
   dispose() {
@@ -68,7 +78,7 @@ export default class Pty {
       let waitingForNl = command.split("\n").length;
       let firstData = true;
       let ps1State = 0;
-      let ps1NextCallback = () => {};
+      let ps1NextCallback = () => { };
       let errorCode: number;
       let cwd: string;
 
