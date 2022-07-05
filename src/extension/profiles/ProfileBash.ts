@@ -16,6 +16,14 @@ export default class ProfileBash implements Profile {
     return path;
   }
 
+  getPS1(uuid: string): string {
+    return `export PS1='${uuid}|$?|$(pwd)|'\r`;
+  }
+
+  getPS2(ps2: string): string {
+    return `export PS2='${ps2}'\r`;
+  }
+
   readHistory(): Promise<string[]> {
     return new Promise((resolve) => {
       const historyFile = path.resolve(os.homedir(), ".bash_history");

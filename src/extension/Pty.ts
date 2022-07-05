@@ -1,5 +1,6 @@
 import { commands } from "vscode";
 import { IPty, spawn } from "node-pty";
+import { Graph } from "./typings/types";
 import ParserBuffer from "./util/ParserBuffer";
 
 const CTRL_C = "\x03";
@@ -17,7 +18,7 @@ export default class Pty {
   public pid: number;
   private pty: IPty;
 
-  constructor(shell: string, cwd: string) {
+  constructor(shell: string, cwd: string, graph: Graph) {
     try {
       this.pty = spawn(shell, [], {
         name: "xterm-color",
@@ -39,13 +40,8 @@ export default class Pty {
     this.pid = this.pty.pid;
 
     // Set prompt
-    if (shell.endsWith("csh")) {
-      this.pty.write('set prompt="' + UUID + '|`echo $status`|`pwd`|"\r');
-    }
-    else {
-      this.pty.write(`export PS1='${UUID}|$?|$(pwd)|'\r`);
-      this.pty.write(`export PS2='${PS2}'\r`);
-    }
+    this.pty.write(graph.profile.getPS1(UUID));
+    this.pty.write(graph.profile.getPS2(PS2));
   }
 
   dispose() {
@@ -78,7 +74,7 @@ export default class Pty {
       let waitingForNl = command.split("\n").length;
       let firstData = true;
       let ps1State = 0;
-      let ps1NextCallback = () => { };
+      let ps1NextCallback = () => {};
       let errorCode: number;
       let cwd: string;
 

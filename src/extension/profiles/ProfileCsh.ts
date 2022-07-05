@@ -16,6 +16,14 @@ export default class ProfileCsh implements Profile {
     return path;
   }
 
+  getPS1(uuid: string): string {
+    return 'set prompt="' + uuid + '|`echo $status`|`pwd`|"\r';
+  }
+
+  getPS2(ps2: string): string {
+    return `set prompt2="${ps2}"\r`;
+  }
+
   readHistory(): Promise<string[]> {
     return new Promise((resolve) => {
       const historyFile = path.resolve(os.homedir(), ".history");
