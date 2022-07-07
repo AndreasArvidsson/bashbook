@@ -2,7 +2,7 @@
     "name": "bashbook",
     "displayName": "BashBook",
     "description": "Notebook for running bash/shell script",
-    "version": "0.0.7",
+    "version": "0.1.0",
     "publisher": "AndreasArvidsson",
     "license": "MIT",
     "repository": {
