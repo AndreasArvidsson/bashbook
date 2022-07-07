@@ -1,4 +1,4 @@
-name: CI
+pname: CI
 on:
   push:
     branches:
@@ -51,7 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_arch: ${{ matrix.npm_config_arch }}
-      - run: node_modules/.bin/electron-rebuild -w node-pty
+      - run: npm run rebuild
       - shell: pwsh
         run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
       - run: npx vsce package --target ${{ env.target }}
