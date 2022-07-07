@@ -185,6 +185,7 @@
         "compile": "npm run compile:extension && npm run compile:renderer",
         "compile:extension": "tsc --build ./src/extension",
         "compile:renderer": "webpack --mode production",
+        "rebuild": "electron-rebuild -f -w nodepty",
         "watch": "concurrently -r \"npm:watch:*\"",
         "watch:extension": "tsc --build --watch ./src/extension",
         "watch:renderer": "webpack --mode development --watch"
@@ -210,8 +211,9 @@
         "webpack": "^5.65.0",
         "webpack-cli": "^4.9.1",
         "xterm": "^4.16.0",
-        "electron": "13.5.2",
+        "electron": "^17.4.7",
         "electron-rebuild": "^3.2.5",
-        "clipboardy": "^3.0.0"
+        "clipboardy": "^3.0.0",
+        "node-abi": "^3.22.0"
     }
 }

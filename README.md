@@ -61,7 +61,7 @@ On a Ubuntu/Debian system you may get a `Cannot open resource with notebook edit
 npm install
 
 # Run after each install
-node_modules/.bin/electron-rebuild -w nodepty
+npm run rebuild
 
 npm run compile
 ```
@@ -78,8 +78,8 @@ Due to node-pty we have platform specific dependencies
 
 ### Rebuild node-pty with correct electron version
 
-If you get an error `NODE_MODULE_VERSION` mismatch run the following:
+If you get an error `NODE_MODULE_VERSION` mismatch.
 
-```
-node_modules/.bin/electron-rebuild -w node-pty
-```
+1. Check the version of electron vscode is using. `Help => About => Electron`
+1. Make sure you have the correct version of electron in `package.json`. List of electron versions is available [here](https://github.com/electron/releases#releases)
+1. Run `npm run rebuild`
