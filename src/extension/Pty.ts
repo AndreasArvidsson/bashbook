@@ -1,5 +1,6 @@
 import { commands } from "vscode";
 import { IPty, spawn } from "node-pty";
+import { Graph } from "./typings/types";
 import ParserBuffer from "./util/ParserBuffer";
 
 const CTRL_C = "\x03";
@@ -17,14 +18,19 @@ export default class Pty {
   public pid: number;
   private pty: IPty;
 
-  constructor(shell: string, cwd: string) {
-    this.pty = spawn(shell, [], {
-      name: "xterm-color",
-      cols: 80,
-      rows: ROWS,
-      cwd,
-      env: <{ [key: string]: string }>process.env,
-    });
+  constructor(shell: string, cwd: string, graph: Graph) {
+    try {
+      this.pty = spawn(shell, [], {
+        name: "xterm-color",
+        cols: 80,
+        rows: ROWS,
+        cwd,
+        env: <{ [key: string]: string }>process.env,
+      });
+    } catch (e) {
+      console.error(`failed to launch: ${shell}`);
+      throw e;
+    }
 
     this.pty.onExit(() => {
       console.debug("Exit");
@@ -34,8 +40,8 @@ export default class Pty {
     this.pid = this.pty.pid;
 
     // Set prompt
-    this.pty.write(`export PS1='${UUID}|$?|$(pwd)|'\r`);
-    this.pty.write(`export PS2='${PS2}'\r`);
+    this.pty.write(graph.profile.getPS1(UUID));
+    this.pty.write(graph.profile.getPS2(PS2));
   }
 
   dispose() {

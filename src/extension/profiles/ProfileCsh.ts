@@ -3,9 +3,9 @@ import * as path from "path";
 import * as fs from "fs";
 import Profile from "./Profile";
 
-export default class ProfileBash implements Profile {
+export default class ProfileCsh implements Profile {
   getShell(): string {
-    return os.platform() === "win32" ? "bash.exe" : "bash";
+    return "csh";
   }
 
   updateRootPath(path: string): string {
@@ -17,23 +17,23 @@ export default class ProfileBash implements Profile {
   }
 
   getPS1(uuid: string): string {
-    return `export PS1='${uuid}|$?|$(pwd)|'\r`;
+    return 'set prompt="' + uuid + '|`echo $status`|`pwd`|"\r';
   }
 
   getPS2(ps2: string): string {
-    return `export PS2='${ps2}'\r`;
+    return `set prompt2="${ps2}"\r`;
   }
 
   readHistory(): Promise<string[]> {
     return new Promise((resolve) => {
-      const historyFile = path.resolve(os.homedir(), ".bash_history");
+      const historyFile = path.resolve(os.homedir(), ".history");
       fs.readFile(historyFile, "utf8", (err, data) => {
         if (err) {
           console.error(err);
           resolve([]);
           return;
         }
-        const lines = data.split("\n").filter(Boolean);
+        const lines = data.split("\n").filter(Boolean).filter((l) => !l.startsWith("#"));
         resolve(lines);
       });
     });
