@@ -39,7 +39,7 @@ export default class Notebook {
     console.debug(`Spawning shell: '${shell}' @ '${cwd}'`);
 
     this.graph.setCWD(cwd);
-    this.pty = new Pty(shell, cwd);
+    this.pty = new Pty(shell, cwd, graph);
   }
 
   dispose() {
