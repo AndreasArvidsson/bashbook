@@ -189,7 +189,8 @@
         "rebuild": "electron-rebuild -f -w nodepty",
         "watch": "concurrently -r \"npm:watch:*\"",
         "watch:extension": "tsc --build --watch ./src/extension",
-        "watch:renderer": "webpack --mode development --watch"
+        "watch:renderer": "webpack --mode development --watch",
+        "package": "vsce package"
     },
     "extensionDependencies": [
         "pokey.parse-tree"
