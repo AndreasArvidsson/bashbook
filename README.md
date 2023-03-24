@@ -64,6 +64,9 @@ npm install
 npm run rebuild
 
 npm run compile
+
+# Build `.vsix` file
+npm run package
 ```
 
 ### Dependencies
