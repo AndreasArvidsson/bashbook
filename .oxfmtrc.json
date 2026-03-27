@@ -1,0 +1,19 @@
+{
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+    "tabWidth": 4,
+    "printWidth": 80,
+    "sortPackageJson": false,
+    "sortImports": {
+        "newlinesBetween": false,
+        "partitionByNewline": true
+    },
+
+    "overrides": [
+        {
+            "files": ["*.yaml"],
+            "options": {
+                "tabWidth": 2
+            }
+        }
+    ]
+}

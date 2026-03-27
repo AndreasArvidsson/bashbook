@@ -11,11 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     environment: Production
+
     steps:
       - name: Download artifacts
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v19
         with:
           workflow: build.yaml
-      - run: npx vsce publish --packagePath $(find . -iname *.vsix)
+
+      - name: Publish extension
+        run: npx vsce publish --packagePath $(find . -iname *.vsix)
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}

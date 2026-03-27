@@ -1,27 +1,30 @@
-import * as path from "path";
-import ProfileBash from "./ProfileBash";
+import * as path from "node:path";
+import { ProfileBash } from "./ProfileBash";
 
-export default class ProfileGitBash extends ProfileBash {
-  getShell(): string {
-    return "C:/Program Files/Git/bin/bash.exe";
-  }
+export class ProfileGitBash extends ProfileBash {
+    useConpty = false;
 
-  nodeToShellPath(path: string): string {
-    // c: => /c/
-    if (/^\[a-zA-Z]:/.test(path)) {
-      path = `/${path[0]}/${path.substring(2)}`;
+    getShell(): string {
+        return "C:/Program Files/Git/bin/bash.exe";
     }
-    return path.replace(/\\/, "/");
-  }
 
-  updateRootPath(rootPath: string): string {
-    // /c/ => c:
-    if (/^\/[a-zA-Z]\//.test(rootPath)) {
-      return `${rootPath[1]}:${rootPath.substring(2)}`;
+    nodeToShellPath(shellPathSource: string): string {
+        let shellPath = shellPathSource;
+        // c: => /c/
+        if (/^[a-zA-Z]:/.test(shellPath)) {
+            shellPath = `/${shellPath[0]}/${shellPath.slice(2)}`;
+        }
+        return shellPath.replace(/\\/, "/");
     }
-    if (rootPath.startsWith("/")) {
-      return path.join("C:/Program Files/Git", rootPath);
+
+    updateRootPath(rootPath: string): string {
+        // /c/ => c:
+        if (/^\/[a-zA-Z]\//.test(rootPath)) {
+            return `${rootPath[1]}:${rootPath.slice(2)}`;
+        }
+        if (rootPath.startsWith("/")) {
+            return path.join("C:/Program Files/Git", rootPath);
+        }
+        return rootPath;
     }
-    return rootPath;
-  }
 }

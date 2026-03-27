@@ -1,75 +1,87 @@
 import * as vscode from "vscode";
 import {
-  CONTROLLER_ID,
-  LANGUAGE,
-  NOTEBOOK_LABEL,
-  NOTEBOOK_TYPE,
+    CONTROLLER_ID,
+    LANGUAGE,
+    NOTEBOOK_LABEL,
+    NOTEBOOK_TYPE,
 } from "./Constants";
-import { Graph } from "./typings/types";
-import Notebook, { ExecutionOptions } from "./Notebook";
+import type { ExecutionOptions } from "./Notebook";
+import { Notebook } from "./Notebook";
+import type { Graph } from "./types";
 
-export default class Controller {
-  private readonly controller: vscode.NotebookController;
-  private readonly notebooks = new Map<string, Notebook>();
+export class Controller {
+    private readonly controller: vscode.NotebookController;
+    private readonly notebooks = new Map<string, Notebook>();
 
-  constructor(private graph: Graph) {
-    this.controller = vscode.notebooks.createNotebookController(
-      CONTROLLER_ID,
-      NOTEBOOK_TYPE,
-      NOTEBOOK_LABEL
-    );
-    this.controller.supportedLanguages = [LANGUAGE];
-    this.controller.supportsExecutionOrder = true;
-    this.doExecution = this.doExecution.bind(this);
-    this.controller.executeHandler = this.executeHandler.bind(this);
-    this.onDidOpenNotebookDocument = this.onDidOpenNotebookDocument.bind(this);
-    this.onDidCloseNotebookDocument =
-      this.onDidCloseNotebookDocument.bind(this);
-  }
-
-  dispose() {
-    this.controller.dispose();
-    this.notebooks.forEach((shell) => shell.dispose());
-  }
-
-  onDidOpenNotebookDocument(document: vscode.NotebookDocument) {
-    this.notebooks.set(
-      document.uri.toString(),
-      new Notebook(this.graph, document.uri)
-    );
-  }
-
-  onDidCloseNotebookDocument(document: vscode.NotebookDocument) {
-    this.notebooks.get(document.uri.toString())?.dispose();
-    this.notebooks.delete(document.uri.toString());
-  }
-
-  onData(notebookUri: string, cellUri: string, data: string) {
-    this.notebooks.get(notebookUri)?.onData(cellUri, data);
-  }
-
-  setCols(notebookUri: string, cols: number) {
-    this.notebooks.get(notebookUri)?.setCols(cols);
-  }
-
-  doExecution(cell: vscode.NotebookCell, options?: ExecutionOptions) {
-    return new Promise<string>((resolve, reject) => {
-      this.notebooks
-        .get(cell.notebook.uri.toString())!
-        .doExecution(
-          this.controller.createNotebookCellExecution(cell),
-          options,
-          resolve,
-          reject
+    constructor(private readonly graph: Graph) {
+        this.controller = vscode.notebooks.createNotebookController(
+            CONTROLLER_ID,
+            NOTEBOOK_TYPE,
+            NOTEBOOK_LABEL,
+            this.executeHandler.bind(this),
         );
-    });
-  }
-
-  private executeHandler(cells: vscode.NotebookCell[]) {
-    for (const cell of cells) {
-      this.notebooks
-        .get(cell.notebook.uri.toString())!
-        .doExecution(this.controller.createNotebookCellExecution(cell));
+        this.controller.supportedLanguages = [LANGUAGE];
+        this.controller.supportsExecutionOrder = true;
     }
-  }
+
+    dispose(): void {
+        this.controller.dispose();
+        for (const notebook of this.notebooks.values()) {
+            notebook.dispose();
+        }
+        this.notebooks.clear();
+    }
+
+    onDidCloseNotebookDocument(document: vscode.NotebookDocument): void {
+        this.notebooks.get(document.uri.toString())?.dispose();
+        this.notebooks.delete(document.uri.toString());
+    }
+
+    onData(notebookUri: string, cellUri: string, data: string): void {
+        this.notebooks.get(notebookUri)?.onData(cellUri, data);
+    }
+
+    setCols(notebookUri: string, cols: number): void {
+        this.notebooks.get(notebookUri)?.setCols(cols);
+    }
+
+    doExecution(
+        cell: vscode.NotebookCell,
+        options: ExecutionOptions = {},
+    ): Promise<string> {
+        return new Promise<string>((resolve) => {
+            const notebook = this.notebooks.get(cell.notebook.uri.toString());
+
+            if (notebook == null) {
+                resolve("");
+                return;
+            }
+
+            void notebook.doExecution(
+                this.controller.createNotebookCellExecution(cell),
+                options,
+                resolve,
+            );
+        });
+    }
+
+    private async executeHandler(
+        cells: vscode.NotebookCell[],
+        notebook: vscode.NotebookDocument,
+    ): Promise<void> {
+        let notebookInstance = this.notebooks.get(notebook.uri.toString());
+
+        if (notebookInstance == null) {
+            notebookInstance = new Notebook(this.graph, notebook.uri);
+            this.notebooks.set(notebook.uri.toString(), notebookInstance);
+        }
+
+        await Promise.all(
+            cells.map((cell) =>
+                notebookInstance.doExecution(
+                    this.controller.createNotebookCellExecution(cell),
+                ),
+            ),
+        );
+    }
 }

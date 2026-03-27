@@ -3,6 +3,17 @@
     "tasks": [
         {
             "type": "npm",
+            "script": "build",
+            "presentation": {
+                "reveal": "never"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "type": "npm",
             "script": "watch",
             "problemMatcher": "$tsc-watch",
             "isBackground": true,
@@ -10,8 +21,7 @@
                 "reveal": "never"
             },
             "group": {
-                "kind": "build",
-                "isDefault": true
+                "kind": "build"
             }
         }
     ]

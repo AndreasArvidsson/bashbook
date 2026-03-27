@@ -1,41 +1,43 @@
-import * as os from "os";
-import * as path from "path";
-import * as fs from "fs";
-import Profile from "./Profile";
+import * as fs from "node:fs/promises";
+import * as os from "node:os";
+import * as path from "node:path";
+import { errorIsENOENT } from "../util/errorIsENOENT";
+import type { Profile } from "./Profile";
 
-export default class ProfileBash implements Profile {
-  getShell(): string {
-    return os.platform() === "win32" ? "bash.exe" : "bash";
-  }
+export class ProfileBash implements Profile {
+    getShell(): string {
+        return os.platform() === "win32" ? "bash.exe" : "bash";
+    }
 
-  updateRootPath(path: string): string {
-    return path;
-  }
+    updateRootPath(rootPath: string): string {
+        return rootPath;
+    }
 
-  nodeToShellPath(path: string): string {
-    return path;
-  }
+    nodeToShellPath(shellPath: string): string {
+        return shellPath;
+    }
 
-  getPS1(uuid: string): string {
-    return `export PS1='${uuid}|$?|$(pwd)|'\r`;
-  }
+    getPS1(uuid: string): string {
+        return `export PS1='${uuid}|$?|$(pwd)|'\r`;
+    }
 
-  getPS2(ps2: string): string {
-    return `export PS2='${ps2}'\r`;
-  }
+    getPS2(ps2: string): string {
+        return `export PS2='${ps2}'\r`;
+    }
 
-  readHistory(): Promise<string[]> {
-    return new Promise((resolve) => {
-      const historyFile = path.resolve(os.homedir(), ".bash_history");
-      fs.readFile(historyFile, "utf8", (err, data) => {
-        if (err) {
-          console.error(err);
-          resolve([]);
-          return;
+    async readHistory(): Promise<string[]> {
+        try {
+            const historyFile = path.resolve(os.homedir(), ".bash_history");
+            const content = await fs.readFile(historyFile, "utf8");
+            return content
+                .split(/\r?\n/)
+                .map((l) => l.trim())
+                .filter((l) => l.length > 0);
+        } catch (error) {
+            if (!errorIsENOENT(error)) {
+                console.error(error);
+            }
+            return [];
         }
-        const lines = data.split("\n").filter(Boolean);
-        resolve(lines);
-      });
-    });
-  }
+    }
 }

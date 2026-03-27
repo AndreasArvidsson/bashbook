@@ -1,181 +1,189 @@
+import type { IPty } from "node-pty";
+import { spawn } from "node-pty";
 import { commands } from "vscode";
-import { IPty, spawn } from "node-pty";
-import { Graph } from "./typings/types";
-import ParserBuffer from "./util/ParserBuffer";
+import type { Graph } from "./types";
+import { ParserBuffer } from "./util/ParserBuffer";
 
-const CTRL_C = "\x03";
+const CTRL_C = "\u0003";
 const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";
 const ROWS = 30;
-const UUID_REGEXP = new RegExp(UUID.split("").join("\\s*\\r?\\n?"));
+const UUID_REGEXP = new RegExp(UUID.split("").join(String.raw`\s*\r?\n?`));
 const PS2 = "> ";
 
 interface Result {
-  errorCode: number;
-  cwd: string;
+    exitCode: number;
+    cwd: string;
 }
 
-export default class Pty {
-  public pid: number;
-  private pty: IPty;
+export class Pty {
+    public pid: number;
+    private readonly pty: IPty;
 
-  constructor(shell: string, cwd: string, graph: Graph) {
-    try {
-      this.pty = spawn(shell, [], {
-        name: "xterm-color",
-        cols: 80,
-        rows: ROWS,
-        cwd,
-        env: <{ [key: string]: string }>process.env,
-      });
-    } catch (e) {
-      console.error(`failed to launch: ${shell}`);
-      throw e;
+    constructor(shell: string, cwd: string, graph: Graph) {
+        try {
+            this.pty = spawn(shell, [], {
+                name: "xterm-color",
+                cols: 80,
+                rows: ROWS,
+                cwd,
+                // oxlint-disable-next-line node/no-process-env
+                env: process.env,
+                useConpty: graph.profile.useConpty,
+            });
+        } catch (error: unknown) {
+            console.error(`failed to launch: ${shell}`);
+            console.error(error);
+            throw error;
+        }
+
+        this.pty.onExit(() => {
+            console.debug("Exit");
+            commands.executeCommand("workbench.action.closeActiveEditor");
+        });
+
+        this.pid = this.pty.pid;
+
+        // Set prompt
+        this.pty.write(graph.profile.getPS1(UUID));
+        this.pty.write(graph.profile.getPS2(PS2));
     }
 
-    this.pty.onExit(() => {
-      console.debug("Exit");
-      commands.executeCommand("workbench.action.closeActiveEditor");
-    });
-
-    this.pid = this.pty.pid;
-
-    // Set prompt
-    this.pty.write(graph.profile.getPS1(UUID));
-    this.pty.write(graph.profile.getPS2(PS2));
-  }
-
-  dispose() {
-    this.pty.kill();
-  }
-
-  getCols() {
-    return this.pty.cols;
-  }
-
-  setCols(cols: number) {
-    cols = Math.max(UUID.length, cols);
-    if (cols !== this.pty.cols) {
-      this.pty.resize(cols, ROWS);
-      this.pty.write("\r");
+    dispose(): void {
+        this.pty.kill();
     }
-  }
 
-  write(data: string) {
-    this.pty.write(data);
-  }
+    getCols(): number {
+        return this.pty.cols;
+    }
 
-  terminate() {
-    this.pty.write(CTRL_C);
-  }
-
-  writeCommand(command: string, onData: (data: string) => void) {
-    return new Promise<Result>((resolve, reject) => {
-      const parser = new ParserBuffer();
-      let waitingForNl = command.split("\n").length;
-      let firstData = true;
-      let ps1State = 0;
-      let ps1NextCallback = () => {};
-      let errorCode: number;
-      let cwd: string;
-
-      // Don't print command when it's echoed back
-      const parseCommand = () => {
-        let indexNl = parser.indexOfNl();
-        const indexUUID = parser.indexOf(UUID);
-        if (indexUUID > -1 && (!indexNl || indexUUID < indexNl.index)) {
-          parseCallback = parsePS1;
-          ps1NextCallback = parseCommand;
-          parsePS1();
+    setCols(colsSource: number): void {
+        const cols = Math.max(UUID.length, colsSource);
+        if (cols !== this.pty.cols) {
+            this.pty.resize(cols, ROWS);
+            this.pty.write("\r");
         }
+    }
 
-        if (indexNl) {
-          parser.trimLeadingAnsiAndNl();
-          indexNl = parser.indexOfNl();
-          const nlForCol = indexNl!.index === this.pty.cols;
-          parser.advance(indexNl!.indexAfter);
+    write(data: string): void {
+        this.pty.write(data);
+    }
 
-          // Only decrease waiting if the new line was because of the input and not because of the column width
-          if (!nlForCol) {
-            --waitingForNl;
-          }
-        } else {
-          return;
-        }
+    terminate(): void {
+        this.pty.write(CTRL_C);
+    }
 
-        if (!waitingForNl) {
-          parseCallback = parseData;
-        }
+    writeCommand(
+        command: string,
+        onData: (data: string) => void,
+    ): Promise<Result> {
+        return new Promise<Result>((resolve) => {
+            const parser = new ParserBuffer();
+            let waitingForNl = command.split("\n").length;
+            let firstData = true;
+            let ps1State = 0;
+            // oxlint-disable-next-line unicorn/consistent-function-scoping, no-empty-function
+            let ps1NextCallback = () => {};
+            let exitCode: number;
+            let cwd: string;
 
-        if (!parser.isEmpty()) {
-          parseCallback();
-        }
-      };
+            // Don't print command when it's echoed back
+            const parseCommand = () => {
+                let indexNl = parser.indexOfNl();
+                const indexUUID = parser.indexOf(UUID);
+                if (
+                    indexUUID !== -1 &&
+                    (indexNl == null || indexUUID < indexNl.index)
+                ) {
+                    parseCallback = parsePS1;
+                    ps1NextCallback = parseCommand;
+                    parsePS1();
+                }
 
-      const parseData = () => {
-        if (firstData) {
-          firstData = false;
-          parser.trimLeadingAnsiAndNl();
-        }
+                if (indexNl != null) {
+                    parser.trimLeadingAnsiAndNl();
+                    indexNl = parser.indexOfNl() ?? indexNl;
+                    const nlForCol = indexNl.index === this.pty.cols;
+                    parser.advance(indexNl.indexAfter);
 
-        // const [bufferI, dataI] = parser.lookahead(UUID);TODO
+                    // Only decrease waiting if the new line was because of the input and not because of the column width
+                    if (!nlForCol) {
+                        --waitingForNl;
+                    }
+                } else {
+                    return;
+                }
 
-        const uuidMatch = parser.get().match(UUID_REGEXP);
-        const data = uuidMatch
-          ? parser.read(uuidMatch.index!)
-          : parser.readAll();
+                if (!waitingForNl) {
+                    parseCallback = parseData;
+                }
 
-        if (data) {
-          onData(data);
-        }
+                if (!parser.isEmpty()) {
+                    parseCallback();
+                }
+            };
 
-        if (uuidMatch) {
-          parseCallback = parsePS1;
-          ps1State = 0;
-          ps1NextCallback = parseFinished;
-          parseCallback();
-        }
-      };
+            const parseData = () => {
+                if (firstData) {
+                    firstData = false;
+                    parser.trimLeadingAnsiAndNl();
+                }
 
-      const parsePS1 = () => {
-        // Each part of the PS1 ends with '|'
-        let index = parser.indexOf("|");
-        if (index < 1) {
-          return;
-        }
-        parser.trimNl();
-        index = parser.indexOf("|");
-        if (ps1State === 0) {
-          parser.advance(index);
-        } else if (ps1State === 1) {
-          errorCode = Number.parseInt(parser.read(index));
-        } else {
-          cwd = parser.read(index);
-          parseCallback = ps1NextCallback;
-        }
-        parser.match("|");
-        ++ps1State;
-        parseCallback();
-      };
+                // const [bufferI, dataI] = parser.lookahead(UUID);TODO
 
-      const parseFinished = () => {
-        const result = { errorCode, cwd };
-        disposable.dispose();
-        if (errorCode === 0) {
-          resolve(result);
-        } else {
-          reject(result);
-        }
-      };
+                const uuidMatch = parser.get().match(UUID_REGEXP);
+                const data =
+                    uuidMatch?.index != null
+                        ? parser.read(uuidMatch.index)
+                        : parser.readAll();
 
-      let parseCallback = parseCommand;
+                if (data.length > 0) {
+                    onData(data);
+                }
 
-      const disposable = this.pty.onData((data) => {
-        parser.append(data);
-        parseCallback();
-      });
+                if (uuidMatch != null) {
+                    parseCallback = parsePS1;
+                    ps1State = 0;
+                    ps1NextCallback = parseFinished;
+                    parseCallback();
+                }
+            };
 
-      parser.clear();
-      this.pty.write(`${command}\r`);
-    });
-  }
+            const parsePS1 = () => {
+                // Each part of the PS1 ends with '|'
+                let index = parser.indexOf("|");
+                if (index < 1) {
+                    return;
+                }
+                parser.trimNl();
+                index = parser.indexOf("|");
+                if (ps1State === 0) {
+                    parser.advance(index);
+                } else if (ps1State === 1) {
+                    exitCode = Number.parseInt(parser.read(index), 10);
+                } else {
+                    cwd = parser.read(index);
+                    parseCallback = ps1NextCallback;
+                }
+                parser.match("|");
+                ++ps1State;
+                parseCallback();
+            };
+
+            const parseFinished = () => {
+                const result = { exitCode, cwd };
+                disposable.dispose();
+                resolve(result);
+            };
+
+            let parseCallback = parseCommand;
+
+            const disposable = this.pty.onData((data) => {
+                parser.append(data);
+                parseCallback();
+            });
+
+            parser.clear();
+            this.pty.write(`${command}\r`);
+        });
+    }
 }

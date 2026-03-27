@@ -2,25 +2,36 @@
     "name": "bashbook",
     "displayName": "BashBook",
     "description": "Notebook for running bash/shell script",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "publisher": "AndreasArvidsson",
     "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/AndreasArvidsson/bashbook.git"
     },
+    "sponsor": {
+        "url": "https://github.com/sponsors/AndreasArvidsson"
+    },
+    "funding": "https://github.com/sponsors/AndreasArvidsson",
     "engines": {
-        "vscode": "^1.63.0"
+        "vscode": "^1.113.0"
     },
     "categories": [
         "Notebooks"
     ],
     "activationEvents": [
         "onNotebookEditor:bashbook",
-        "onNotebook:bashbook",
-        "onCommand:bashbook.newNotebook"
+        "onNotebook:bashbook"
     ],
     "main": "./out/extension.js",
+    "files": [
+        "out",
+        "images",
+        "node_modules/node-pty",
+        "LICENSE",
+        "README.md",
+        "package.json"
+    ],
     "contributes": {
         "commands": [
             {
@@ -172,7 +183,7 @@
         "notebookRenderer": [
             {
                 "id": "bashbook-renderer",
-                "entrypoint": "./out/renderer.js",
+                "entrypoint": "./out/renderer.mjs",
                 "displayName": "BashBook",
                 "requiresMessaging": "always",
                 "mimeTypes": [
@@ -182,40 +193,43 @@
         ]
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "npm run compile:extension && npm run compile:renderer",
-        "compile:extension": "tsc --build ./src/extension",
-        "compile:renderer": "webpack --mode production",
-        "rebuild": "electron-rebuild -f -w nodepty",
-        "watch": "concurrently -r \"npm:watch:*\"",
-        "watch:extension": "tsc --build --watch ./src/extension",
-        "watch:renderer": "webpack --mode development --watch",
-        "package": "vsce package"
+        "vscode:prepublish": "npm run build",
+        "build": "npm run build:extension && npm run build:renderer",
+        "build:extension": "vite build --mode extension",
+        "build:renderer": "vite build --mode renderer",
+        "rebuild": "electron-rebuild -f",
+        "watch": "concurrently -r \"npm:watch:extension\" \"npm:watch:renderer\"",
+        "watch:extension": "vite build --mode extension --watch",
+        "watch:renderer": "vite build --mode renderer --watch",
+        "package": "vsce package",
+        "typecheck": "tsc -p .",
+        "lint": "npm run typecheck && npm run lint:ts && npm run lint:fmt",
+        "lint:ts": "oxlint -c oxlint.config.mts --deny-warnings .",
+        "lint:fmt": "oxfmt --check .",
+        "fix": "npm run fix:ts && npm run fix:fmt",
+        "fix:ts": "oxlint -c oxlint.config.mts --fix .",
+        "fix:fmt": "oxfmt ."
     },
     "extensionDependencies": [
         "pokey.parse-tree"
     ],
     "dependencies": {
-        "node-pty": "^0.10.1"
+        "node-pty": "^1.1.0"
     },
     "devDependencies": {
-        "@types/node": "16.x",
-        "@types/vscode": "^1.63.0",
-        "@types/vscode-notebook-renderer": "^1.57.8",
-        "@typescript-eslint/eslint-plugin": "^5.1.0",
-        "@typescript-eslint/parser": "^5.1.0",
-        "concurrently": "^7.0.0",
-        "css-loader": "^6.5.1",
-        "eslint": "^8.1.0",
-        "style-loader": "^3.3.1",
-        "ts-loader": "^9.2.6",
-        "typescript": "^4.4.4",
-        "webpack": "^5.65.0",
-        "webpack-cli": "^4.9.1",
-        "xterm": "^4.16.0",
-        "electron": "^18.3.5",
-        "electron-rebuild": "^3.2.7",
-        "clipboardy": "^3.0.0",
-        "node-abi": "^3.22.0"
+        "@electron/rebuild": "^4.0.3",
+        "@types/node": "^24.12.0",
+        "@types/vscode-notebook-renderer": "^1.72.4",
+        "@types/vscode": "^1.110.0",
+        "@xterm/xterm": "^6.0.0",
+        "clipboardy": "^5.3.1",
+        "concurrently": "^9.2.1",
+        "electron": "39.8.3",
+        "oxfmt": "^0.42.0",
+        "oxlint-tsgolint": "^0.17.4",
+        "oxlint": "^1.57.0",
+        "typescript": "^6.0.2",
+        "vite": "^8.0.3",
+        "web-tree-sitter": "^0.26.7"
     }
 }

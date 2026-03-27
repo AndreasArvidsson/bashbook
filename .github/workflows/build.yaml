@@ -42,20 +42,35 @@ jobs:
             arch: arm64
             npm_config_arch: arm64
     runs-on: ${{ matrix.os }}
+
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: 16.x
-      - run: npm install
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm --color ci
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_arch: ${{ matrix.npm_config_arch }}
-      - run: npm run rebuild
-      - shell: pwsh
+
+      - name: Rebuild native modules
+        run: npm run rebuild
+
+      - name: Set target environment
         run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
-      - run: npx vsce package --target ${{ env.target }}
-      - uses: actions/upload-artifact@v2
+        shell: bash
+
+      - name: Package extension
+        run: npx vsce package --target ${{ env.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.target }}
           path: "*.vsix"

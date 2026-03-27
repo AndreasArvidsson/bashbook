@@ -1,77 +1,87 @@
-import * as xterm from "xterm";
+import * as xterm from "@xterm/xterm";
 import clipboard from "clipboardy";
-import "xterm/css/xterm.css";
+// oxlint-disable-next-line import/no-unassigned-import
+import "@xterm/xterm/css/xterm.css";
+// oxlint-disable-next-line import/no-unassigned-import
 import "./Terminal.css";
 
-const DEFAULT_OPTIONS: xterm.ITerminalOptions = {
-  rendererType: "dom",
-  rows: 1,
+type TerminalOptions = xterm.ITerminalOptions & xterm.ITerminalInitOnlyOptions;
+
+const DEFAULT_OPTIONS: TerminalOptions = {
+    rows: 1,
 };
 
 const COLS_MIN = 2;
 const ROWS_MAX = 30;
 
-export default class Terminal extends xterm.Terminal {
-  private dataContent = "";
-  private onDataDisposable?: xterm.IDisposable;
+export class Terminal extends xterm.Terminal {
+    private dataContent = "";
+    private onDataDisposable?: xterm.IDisposable;
 
-  constructor(options: xterm.ITerminalOptions) {
-    super(Object.assign({}, DEFAULT_OPTIONS, options));
+    constructor(options: TerminalOptions) {
+        super({ ...DEFAULT_OPTIONS, ...options });
 
-    this.onSelectionChange(async () => {
-      const selection = this.getSelection().trim();
-      if (selection) {
-        // TODO
-        // await vscode.env.clipboard.writeText(this.getSelection());
-        await clipboard.write(selection);
-      }
-      1;
-    });
-  }
-
-  write(data: string) {
-    super.write(data);
-    this.dataContent += data;
-
-    // Resize number of rows based on actual data content
-    const lines = this.dataContent.split("\n");
-    const rows = Math.min(ROWS_MAX, lines.length);
-    if (this.rows !== rows) {
-      this.resize(this.cols, rows);
+        this.onSelectionChange(async () => {
+            const selection = this.getSelection().trim();
+            if (selection) {
+                // TODO: Use vscode API to write to clipboard instead of clipboardy
+                // await vscode.env.clipboard.writeText(this.getSelection());
+                await clipboard.write(selection);
+            }
+        });
     }
-  }
 
-  onInput(callback: (data: string) => void) {
-    this.onDataDisposable = this.onData(callback);
-  }
+    write(data: string): void {
+        super.write(data);
+        this.dataContent += data;
 
-  disableInput() {
-    this.onDataDisposable?.dispose();
-    this.options.disableStdin = true;
-    // Hide cursor
-    this.options.cursorStyle = "underline";
-  }
-
-  calcTermCols() {
-    if (!this.element?.parentElement) {
-      return;
+        // Resize number of rows based on actual data content
+        const lines = this.dataContent.split("\n");
+        const rows = Math.min(ROWS_MAX, lines.length);
+        if (this.rows !== rows) {
+            this.resize(this.cols, rows);
+        }
     }
-    const core = (this as any)._core;
-    if (core._renderService.dimensions.actualCellWidth === 0) {
-      return;
+
+    onInput(callback: (data: string) => void): void {
+        this.onDataDisposable = this.onData(callback);
     }
-    const parentElementStyle = window.getComputedStyle(
-      this.element.parentElement
-    );
-    const parentElementWidth = parseInt(parentElementStyle.width);
-    const parentElementPadding = 12;
-    const availableWidth =
-      parentElementWidth - parentElementPadding - core.viewport.scrollBarWidth;
-    return Math.max(
-      COLS_MIN,
-      Math.floor(
-        availableWidth / core._renderService.dimensions.actualCellWidth
-      )
-    );
-  }
+
+    disableInput(): void {
+        this.onDataDisposable?.dispose();
+        this.options.disableStdin = true;
+        // Hide cursor
+        this.options.cursorStyle = "underline";
+    }
+
+    calcTermCols(): number {
+        if (this.element?.parentElement == null || this.cols === 0) {
+            return 0;
+        }
+        const screenElement =
+            this.element.querySelector<HTMLElement>(".xterm-screen");
+        const viewportElement =
+            this.element.querySelector<HTMLElement>(".xterm-viewport");
+        if (screenElement == null || viewportElement == null) {
+            return 0;
+        }
+        const cellWidth =
+            screenElement.getBoundingClientRect().width / this.cols;
+        if (cellWidth === 0) {
+            return 0;
+        }
+        const parentElementStyle = globalThis.window.getComputedStyle(
+            this.element.parentElement,
+        );
+        const parentElementWidth = Number.parseInt(
+            parentElementStyle.width,
+            10,
+        );
+        const parentElementPadding = 12;
+        const scrollBarWidth =
+            viewportElement.offsetWidth - viewportElement.clientWidth;
+        const availableWidth =
+            parentElementWidth - parentElementPadding - scrollBarWidth;
+        return Math.max(COLS_MIN, Math.floor(availableWidth / cellWidth));
+    }
 }

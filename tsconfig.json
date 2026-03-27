@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "module": "nodenext",
+        "target": "esnext",
+        "moduleResolution": "nodenext",
+        "lib": ["esnext"],
+        "types": ["node"],
+        "sourceMap": true,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitReturns": true
+    },
+    "include": ["src"]
+}

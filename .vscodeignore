@@ -1,5 +1,0 @@
-.vscode/**
-src/**
-out/**/*.map
-.gitignore
-*.txt

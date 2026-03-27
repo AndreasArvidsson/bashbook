@@ -1,41 +1,43 @@
-import * as os from "os";
-import * as path from "path";
-import * as fs from "fs";
-import Profile from "./Profile";
+import * as fs from "node:fs/promises";
+import * as os from "node:os";
+import * as path from "node:path";
+import { errorIsENOENT } from "../util/errorIsENOENT";
+import type { Profile } from "./Profile";
 
-export default class ProfileCsh implements Profile {
-  getShell(): string {
-    return "csh";
-  }
+export class ProfileCsh implements Profile {
+    getShell(): string {
+        return "csh";
+    }
 
-  updateRootPath(path: string): string {
-    return path;
-  }
+    updateRootPath(rootPath: string): string {
+        return rootPath;
+    }
 
-  nodeToShellPath(path: string): string {
-    return path;
-  }
+    nodeToShellPath(shellPath: string): string {
+        return shellPath;
+    }
 
-  getPS1(uuid: string): string {
-    return 'set prompt="' + uuid + '|`echo $status`|`pwd`|"\r';
-  }
+    getPS1(uuid: string): string {
+        return `set prompt="${uuid}|echo $status|pwd|"\r`;
+    }
 
-  getPS2(ps2: string): string {
-    return `set prompt2="${ps2}"\r`;
-  }
+    getPS2(ps2: string): string {
+        return `set prompt2="${ps2}"\r`;
+    }
 
-  readHistory(): Promise<string[]> {
-    return new Promise((resolve) => {
-      const historyFile = path.resolve(os.homedir(), ".history");
-      fs.readFile(historyFile, "utf8", (err, data) => {
-        if (err) {
-          console.error(err);
-          resolve([]);
-          return;
+    async readHistory(): Promise<string[]> {
+        try {
+            const historyFile = path.resolve(os.homedir(), ".history");
+            const content = await fs.readFile(historyFile, "utf8");
+            return content
+                .split(/\r?\n/)
+                .map((l) => l.trim())
+                .filter((l) => l.length > 0 && !l.startsWith("#"));
+        } catch (error) {
+            if (!errorIsENOENT(error)) {
+                console.error(error);
+            }
+            return [];
         }
-        const lines = data.split("\n").filter(Boolean).filter((l) => !l.startsWith("#"));
-        resolve(lines);
-      });
-    });
-  }
+    }
 }

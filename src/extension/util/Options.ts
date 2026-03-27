@@ -1,13 +1,16 @@
 import { workspace } from "vscode";
-import { ProfileValue } from "../profiles/Profile";
 import { NOTEBOOK_TYPE } from "../Constants";
+import type { ProfileValue } from "../profiles/Profile";
 
-export function getShell() {
-  return workspace.getConfiguration(NOTEBOOK_TYPE).get<string>("shell");
+export function getShell(): string | undefined {
+    const shell = workspace
+        .getConfiguration(NOTEBOOK_TYPE)
+        .get<string>("shell", "");
+    return shell.length > 0 ? shell : undefined;
 }
 
-export function getProfile() {
-  return workspace
-    .getConfiguration(NOTEBOOK_TYPE)
-    .get<ProfileValue>("profile", "Bash");
+export function getProfile(): ProfileValue {
+    return workspace
+        .getConfiguration(NOTEBOOK_TYPE)
+        .get<ProfileValue>("profile", "Bash");
 }

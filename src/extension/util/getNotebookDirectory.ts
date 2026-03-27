@@ -1,13 +1,14 @@
+import * as os from "node:os";
+import * as path from "node:path";
 import * as vscode from "vscode";
-import * as os from "os";
-import * as path from "path";
 
-export default (notebookUri: vscode.Uri) => {
-  if (notebookUri.scheme === "file") {
-    return path.dirname(notebookUri.fsPath);
-  }
-  if (vscode.workspace.workspaceFolders?.length) {
-    return path.resolve(vscode.workspace.workspaceFolders[0].uri.fsPath);
-  }
-  return os.homedir();
-};
+export function getNotebookDirectory(notebookUri: vscode.Uri): string {
+    if (notebookUri.scheme === "file") {
+        return path.dirname(notebookUri.fsPath);
+    }
+    const { workspaceFolders } = vscode.workspace;
+    if (workspaceFolders != null && workspaceFolders.length > 0) {
+        return path.resolve(workspaceFolders[0].uri.fsPath);
+    }
+    return os.homedir();
+}
