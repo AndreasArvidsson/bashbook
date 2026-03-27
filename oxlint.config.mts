@@ -108,6 +108,8 @@ export default defineConfig({
             "warn",
             {
                 argsIgnorePattern: "^_",
+                varsIgnorePattern: "^_",
+                destructuredArrayIgnorePattern: "^_",
                 caughtErrorsIgnorePattern: "^_",
             },
         ],

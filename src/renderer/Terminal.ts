@@ -36,7 +36,7 @@ export class Terminal extends xterm.Terminal {
         this.dataContent += data;
 
         // Resize number of rows based on actual data content
-        const lines = this.dataContent.split("\n");
+        const lines = this.dataContent.split(/\r?\n/);
         const rows = Math.min(ROWS_MAX, lines.length);
         if (this.rows !== rows) {
             this.resize(this.cols, rows);

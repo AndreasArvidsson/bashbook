@@ -100,9 +100,11 @@ export const activate: ActivationFunction = (context) => {
         const message = outputItem.json() as OutputMessage;
         switch (message.type) {
             case "executing":
+                console.log("executing", [message.data]);
                 onExecutingMessage(message, element);
                 break;
             case "completed":
+                console.log("completed", [message.data]);
                 onCompletedMessage(message, element);
                 break;
             default:

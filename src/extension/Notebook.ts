@@ -6,9 +6,10 @@ import type {
 import { MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
 import { Pty } from "./Pty";
 import type { Graph } from "./types";
-import { ansiRegex } from "./util/ansiRegex";
+import { cleanAnsi } from "./util/ansiRegex";
 import { getNotebookDirectory } from "./util/getNotebookDirectory";
 import { getShell } from "./util/Options";
+import { sanitizeRendererData } from "./util/sanitizeRendererData";
 import { updateCommandForVariables } from "./util/updateCommandForVariables";
 
 export interface ExecutionOptions {
@@ -136,13 +137,19 @@ export class Notebook {
                 return;
             }
 
-            dataChunks.push(data);
+            const renderedData = sanitizeRendererData(data);
+
+            if (renderedData.length === 0) {
+                return;
+            }
+
+            dataChunks.push(renderedData);
 
             const json: OutputMessageExecuting = {
                 type: "executing",
                 notebookUri: this.notebookUri,
                 cellUri,
-                data,
+                data: renderedData,
                 cols,
                 firstCommand,
             };
@@ -158,7 +165,7 @@ export class Notebook {
 
         const end = (success: boolean, cwd?: string) => {
             const finishedData = dataChunks.join("");
-            const plaintext = finishedData.replace(ansiRegex, "").trimEnd();
+            const plaintext = cleanAnsi(finishedData).trimEnd();
 
             if (noOutput) {
                 execution.clearOutput();

@@ -9,6 +9,16 @@ export class ProfileBash implements Profile {
         return os.platform() === "win32" ? "bash.exe" : "bash";
     }
 
+    getShellArgs(): string[] {
+        return ["--noprofile", "--norc"];
+    }
+
+    getPrompts(prompt: string): string {
+        return [`export PS1='${prompt}'`, `export PS2='${prompt}'`, ""].join(
+            "\r",
+        );
+    }
+
     updateRootPath(rootPath: string): string {
         return rootPath;
     }
@@ -17,12 +27,8 @@ export class ProfileBash implements Profile {
         return shellPath;
     }
 
-    getPS1(uuid: string): string {
-        return `export PS1='${uuid}|$?|$(pwd)|'\r`;
-    }
-
-    getPS2(ps2: string): string {
-        return `export PS2='${ps2}'\r`;
+    wrapCommand(command: string): string {
+        return command;
     }
 
     async readHistory(): Promise<string[]> {

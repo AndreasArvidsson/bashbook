@@ -2,13 +2,14 @@ import type { IPty } from "node-pty";
 import { spawn } from "node-pty";
 import { commands } from "vscode";
 import type { Graph } from "./types";
-import { ParserBuffer } from "./util/ParserBuffer";
+import { cleanAnsi } from "./util/ansiRegex";
 
 const CTRL_C = "\u0003";
 const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";
+const START = "b83a4057-START-3b189d7c1ce9";
 const ROWS = 30;
-const UUID_REGEXP = new RegExp(UUID.split("").join(String.raw`\s*\r?\n?`));
-const PS2 = "> ";
+const PROMPT = "> ";
+const PROMPT_MATCH = PROMPT.trimEnd();
 
 interface Result {
     exitCode: number;
@@ -18,10 +19,15 @@ interface Result {
 export class Pty {
     public pid: number;
     private readonly pty: IPty;
+    private readonly ready: Promise<void>;
 
-    constructor(shell: string, cwd: string, graph: Graph) {
+    constructor(
+        shell: string,
+        cwd: string,
+        private readonly graph: Graph,
+    ) {
         try {
-            this.pty = spawn(shell, [], {
+            this.pty = spawn(shell, graph.profile.getShellArgs(), {
                 name: "xterm-color",
                 cols: 80,
                 rows: ROWS,
@@ -42,10 +48,8 @@ export class Pty {
         });
 
         this.pid = this.pty.pid;
-
-        // Set prompt
-        this.pty.write(graph.profile.getPS1(UUID));
-        this.pty.write(graph.profile.getPS2(PS2));
+        this.pty.write(graph.profile.getPrompts(PROMPT));
+        this.ready = this.waitForStartSignal();
     }
 
     dispose(): void {
@@ -72,118 +76,123 @@ export class Pty {
         this.pty.write(CTRL_C);
     }
 
-    writeCommand(
+    async writeCommand(
         command: string,
         onData: (data: string) => void,
     ): Promise<Result> {
+        await this.ready;
+
         return new Promise<Result>((resolve) => {
-            const parser = new ParserBuffer();
-            let waitingForNl = command.split("\n").length;
-            let firstData = true;
-            let ps1State = 0;
-            // oxlint-disable-next-line unicorn/consistent-function-scoping, no-empty-function
-            let ps1NextCallback = () => {};
-            let exitCode: number;
-            let cwd: string;
-
-            // Don't print command when it's echoed back
-            const parseCommand = () => {
-                let indexNl = parser.indexOfNl();
-                const indexUUID = parser.indexOf(UUID);
-                if (
-                    indexUUID !== -1 &&
-                    (indexNl == null || indexUUID < indexNl.index)
-                ) {
-                    parseCallback = parsePS1;
-                    ps1NextCallback = parseCommand;
-                    parsePS1();
-                }
-
-                if (indexNl != null) {
-                    parser.trimLeadingAnsiAndNl();
-                    indexNl = parser.indexOfNl() ?? indexNl;
-                    const nlForCol = indexNl.index === this.pty.cols;
-                    parser.advance(indexNl.indexAfter);
-
-                    // Only decrease waiting if the new line was because of the input and not because of the column width
-                    if (!nlForCol) {
-                        --waitingForNl;
-                    }
-                } else {
-                    return;
-                }
-
-                if (!waitingForNl) {
-                    parseCallback = parseData;
-                }
-
-                if (!parser.isEmpty()) {
-                    parseCallback();
-                }
-            };
-
-            const parseData = () => {
-                if (firstData) {
-                    firstData = false;
-                    parser.trimLeadingAnsiAndNl();
-                }
-
-                // const [bufferI, dataI] = parser.lookahead(UUID);TODO
-
-                const uuidMatch = parser.get().match(UUID_REGEXP);
-                const data =
-                    uuidMatch?.index != null
-                        ? parser.read(uuidMatch.index)
-                        : parser.readAll();
-
-                if (data.length > 0) {
-                    onData(data);
-                }
-
-                if (uuidMatch != null) {
-                    parseCallback = parsePS1;
-                    ps1State = 0;
-                    ps1NextCallback = parseFinished;
-                    parseCallback();
-                }
-            };
-
-            const parsePS1 = () => {
-                // Each part of the PS1 ends with '|'
-                let index = parser.indexOf("|");
-                if (index < 1) {
-                    return;
-                }
-                parser.trimNl();
-                index = parser.indexOf("|");
-                if (ps1State === 0) {
-                    parser.advance(index);
-                } else if (ps1State === 1) {
-                    exitCode = Number.parseInt(parser.read(index), 10);
-                } else {
-                    cwd = parser.read(index);
-                    parseCallback = ps1NextCallback;
-                }
-                parser.match("|");
-                ++ps1State;
-                parseCallback();
-            };
-
-            const parseFinished = () => {
-                const result = { exitCode, cwd };
-                disposable.dispose();
-                resolve(result);
-            };
-
-            let parseCallback = parseCommand;
-
+            // 0: wait for start signal
+            // 1: wait for post-command result
+            // 2: wait for prompt match
+            let state = 0;
+            let result: Result = { exitCode: -1, cwd: "" };
+            let lastLine = "";
             const disposable = this.pty.onData((data) => {
-                parser.append(data);
-                parseCallback();
+                const lines = data.split(/\r?\n/);
+                lines[0] = lastLine + lines[0];
+                lastLine = lines.pop() ?? "";
+
+                const handleLine = (line: string) => {
+                    const cleanedLine = cleanAnsi(line);
+
+                    switch (state) {
+                        case 0:
+                            if (cleanedLine === START) {
+                                state = 1;
+                            }
+                            break;
+                        case 1: {
+                            const match = /^\|(\d+)\|(.+)\|/.exec(cleanedLine);
+                            if (match != null) {
+                                result = {
+                                    exitCode: Number.parseInt(match[1], 10),
+                                    cwd: match[2],
+                                };
+                                state = 2;
+                            } else {
+                                onData(`${line}\n`);
+                            }
+                            break;
+                        }
+                        case 2:
+                            if (cleanedLine === PROMPT_MATCH) {
+                                disposable.dispose();
+                                resolve(result);
+                            }
+                            break;
+                        default:
+                            throw new Error(`invalid state: ${state}`);
+                    }
+                };
+
+                for (const line of lines) {
+                    handleLine(line);
+                }
+
+                if (state === 2) {
+                    handleLine(lastLine);
+                }
             });
 
-            parser.clear();
-            this.pty.write(`${command}\r`);
+            this.pty.write(`echo ${START}; ${command}; echo "|$?|$(pwd)|"\r`);
         });
+    }
+
+    private waitForStartSignal(): Promise<void> {
+        let started = false;
+        return new Promise<void>((resolve) => {
+            const disposable = this.pty.onData((data) => {
+                const lines = data.split(/\r?\n/);
+
+                for (const line of lines) {
+                    const cleanedLine = cleanAnsi(line);
+
+                    if (started) {
+                        if (cleanedLine === PROMPT_MATCH) {
+                            disposable.dispose();
+                            resolve();
+                            break;
+                        }
+                    } else if (cleanedLine === START) {
+                        started = true;
+                    }
+                }
+            });
+
+            this.pty.write(`echo ${START}\r`);
+        });
+    }
+
+    private readPrompt(
+        buffer: string,
+        promptIndex: number,
+    ): { exitCode: number; cwd: string; endOfLine: number } | null {
+        const promptPrefixEnd = promptIndex + UUID.length;
+        if (buffer[promptPrefixEnd] !== "|") {
+            return null;
+        }
+
+        const exitCodeEnd = buffer.indexOf("|", promptPrefixEnd + 1);
+        if (exitCodeEnd === -1) {
+            return null;
+        }
+
+        const cwdEnd = buffer.indexOf("|", exitCodeEnd + 1);
+        if (cwdEnd === -1) {
+            return null;
+        }
+
+        const lineEnd = buffer.indexOf("\n", cwdEnd + 1);
+
+        return {
+            exitCode: Number.parseInt(
+                buffer.slice(promptPrefixEnd + 1, exitCodeEnd),
+                10,
+            ),
+            cwd: buffer.slice(exitCodeEnd + 1, cwdEnd),
+            endOfLine: lineEnd === -1 ? cwdEnd + 1 : lineEnd + 1,
+        };
     }
 }

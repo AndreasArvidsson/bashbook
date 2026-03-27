@@ -9,6 +9,16 @@ export class ProfileCsh implements Profile {
         return "csh";
     }
 
+    getShellArgs(): string[] {
+        return [];
+    }
+
+    getPrompts(prompt: string): string {
+        return [`set prompt="${prompt}"`, `set prompt2="${prompt}"`, ""].join(
+            "\r",
+        );
+    }
+
     updateRootPath(rootPath: string): string {
         return rootPath;
     }
@@ -17,12 +27,8 @@ export class ProfileCsh implements Profile {
         return shellPath;
     }
 
-    getPS1(uuid: string): string {
-        return `set prompt="${uuid}|echo $status|pwd|"\r`;
-    }
-
-    getPS2(ps2: string): string {
-        return `set prompt2="${ps2}"\r`;
+    wrapCommand(command: string): string {
+        return command;
     }
 
     async readHistory(): Promise<string[]> {
