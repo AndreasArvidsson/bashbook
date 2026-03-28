@@ -19,8 +19,8 @@ export class ProfileCsh implements Profile {
         );
     }
 
-    getResultCommand(): string {
-        return 'echo "|$status|`pwd`|"';
+    getResultCommand(uuid: string): string {
+        return `echo "${uuid}|$status|$(pwd)|"`;
     }
 
     updateRootPath(rootPath: string): string {

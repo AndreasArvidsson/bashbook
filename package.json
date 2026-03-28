@@ -194,6 +194,7 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run build",
+        "clean": "rm -rf out",
         "build": "npm run build:extension && npm run build:renderer",
         "build:extension": "vite build --mode extension",
         "build:renderer": "vite build --mode renderer",

@@ -10,6 +10,7 @@ const START = "b83a4057-START-3b189d7c1ce9";
 const ROWS = 30;
 const PROMPT = "> ";
 const PROMPT_MATCH = PROMPT.trimEnd();
+const RESULT_REGEX = new RegExp(String.raw`^${UUID}\|(\d+)\|(.+)\|`);
 
 interface Result {
     exitCode: number;
@@ -105,7 +106,7 @@ export class Pty {
                             }
                             break;
                         case 1: {
-                            const match = /^\|(\d+)\|(.+)\|/.exec(cleanedLine);
+                            const match = RESULT_REGEX.exec(cleanedLine);
                             if (match != null) {
                                 result = {
                                     exitCode: Number.parseInt(match[1], 10),
@@ -138,9 +139,8 @@ export class Pty {
                 }
             });
 
-            this.pty.write(
-                `echo ${START}; ${command}; ${this.graph.profile.getResultCommand()}\r`,
-            );
+            const resultCommand = this.graph.profile.getResultCommand(UUID);
+            this.pty.write(`echo ${START}; ${command}; ${resultCommand}\r`);
         });
     }
 
@@ -167,36 +167,5 @@ export class Pty {
 
             this.pty.write(`echo ${START}\r`);
         });
-    }
-
-    private readPrompt(
-        buffer: string,
-        promptIndex: number,
-    ): { exitCode: number; cwd: string; endOfLine: number } | null {
-        const promptPrefixEnd = promptIndex + UUID.length;
-        if (buffer[promptPrefixEnd] !== "|") {
-            return null;
-        }
-
-        const exitCodeEnd = buffer.indexOf("|", promptPrefixEnd + 1);
-        if (exitCodeEnd === -1) {
-            return null;
-        }
-
-        const cwdEnd = buffer.indexOf("|", exitCodeEnd + 1);
-        if (cwdEnd === -1) {
-            return null;
-        }
-
-        const lineEnd = buffer.indexOf("\n", cwdEnd + 1);
-
-        return {
-            exitCode: Number.parseInt(
-                buffer.slice(promptPrefixEnd + 1, exitCodeEnd),
-                10,
-            ),
-            cwd: buffer.slice(exitCodeEnd + 1, cwdEnd),
-            endOfLine: lineEnd === -1 ? cwdEnd + 1 : lineEnd + 1,
-        };
     }
 }

@@ -40,6 +40,11 @@ export async function activate(
         vscode.workspace.onDidCloseNotebookDocument((document) => {
             controller.onDidCloseNotebookDocument(document);
         }),
+        vscode.window.onDidChangeActiveNotebookEditor((editor) => {
+            if (editor != null) {
+                controller.syncNotebookDirectory(editor.notebook.uri);
+            }
+        }),
     );
 
     const messageChannel =

@@ -8,6 +8,7 @@ import {
 import type { ExecutionOptions } from "./Notebook";
 import { Notebook } from "./Notebook";
 import type { Graph } from "./types";
+import { getNotebookDirectory } from "./util/getNotebookDirectory";
 
 export class Controller {
     private readonly controller: vscode.NotebookController;
@@ -35,6 +36,10 @@ export class Controller {
     onDidCloseNotebookDocument(document: vscode.NotebookDocument): void {
         this.notebooks.get(document.uri.toString())?.dispose();
         this.notebooks.delete(document.uri.toString());
+    }
+
+    syncNotebookDirectory(uri: vscode.Uri): void {
+        this.graph.setCWD(getNotebookDirectory(uri));
     }
 
     onData(notebookUri: string, cellUri: string, data: string): void {
