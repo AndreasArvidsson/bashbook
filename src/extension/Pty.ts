@@ -1,7 +1,7 @@
 import type { IPty } from "node-pty";
 import { spawn } from "node-pty";
 import { commands } from "vscode";
-import type { Graph } from "./types";
+import type { Graph, Result } from "./types";
 import { cleanAnsi } from "./util/ansiRegex";
 
 const CTRL_C = "\u0003";
@@ -10,12 +10,7 @@ const START = "b83a4057-START-3b189d7c1ce9";
 const ROWS = 30;
 const PROMPT = "> ";
 const PROMPT_MATCH = PROMPT.trimEnd();
-const RESULT_REGEX = new RegExp(String.raw`^${UUID}\|(\d+)\|(.+)\|`);
-
-interface Result {
-    exitCode: number;
-    cwd: string;
-}
+const RESULT_REGEX = new RegExp(String.raw`^\|${UUID}\|(\d+)\|(.+)\|`);
 
 export class Pty {
     public pid: number;
@@ -98,6 +93,8 @@ export class Pty {
 
                 const handleLine = (line: string) => {
                     const cleanedLine = cleanAnsi(line);
+
+                    console.log(`'${cleanedLine}'`);
 
                     switch (state) {
                         case 0:

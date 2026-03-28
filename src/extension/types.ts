@@ -7,3 +7,8 @@ export interface Graph {
     historyPush: (value: string) => void;
     setCWD: (cwd: string) => void;
 }
+
+export interface Result {
+    exitCode: number;
+    cwd: string;
+}

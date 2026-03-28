@@ -16,7 +16,7 @@ export class ProfileBash implements Profile {
     }
 
     getResultCommand(uuid: string): string {
-        return `echo "${uuid}|$?|$(pwd)|"`;
+        return `echo "|${uuid}|$?|$(pwd)|"`;
     }
 
     updateRootPath(rootPath: string): string {
