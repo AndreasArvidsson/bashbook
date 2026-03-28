@@ -24,6 +24,7 @@
         "onNotebook:bashbook"
     ],
     "main": "./out/extension.js",
+    "icon": "images/icon.png",
     "files": [
         "out",
         "images",
