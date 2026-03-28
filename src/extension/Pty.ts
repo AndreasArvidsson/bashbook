@@ -10,6 +10,7 @@ const START = "b83a4057-START-3b189d7c1ce9";
 const ROWS = 30;
 const PROMPT = "> ";
 const PROMPT_MATCH = PROMPT.trimEnd();
+const SPLIT_REGEX = new RegExp(String.raw`\r?\n|(?=\|${UUID}\|)`);
 const RESULT_REGEX = new RegExp(String.raw`^\|${UUID}\|(\d+)\|(.+)\|`);
 
 export class Pty {
@@ -84,17 +85,14 @@ export class Pty {
             // 2: wait for prompt match
             let state = 0;
             let result: Result = { exitCode: -1, cwd: "" };
-            let lastLine = "";
+            let pending = "";
             let addedNewLine = false;
             const disposable = this.pty.onData((data) => {
-                const lines = data.split(/\r?\n/);
-                lines[0] = lastLine + lines[0];
-                lastLine = lines.pop() ?? "";
+                const parts = `${pending}${data}`.split(SPLIT_REGEX);
+                pending = parts.pop() ?? "";
 
-                const handleLine = (line: string) => {
-                    const cleanedLine = cleanAnsi(line);
-
-                    console.log(`'${cleanedLine}'`);
+                const handlePart = (part: string) => {
+                    const cleanedLine = cleanAnsi(part);
 
                     switch (state) {
                         case 0:
@@ -111,7 +109,7 @@ export class Pty {
                                 };
                                 state = 2;
                             } else {
-                                onData(addedNewLine ? `\r\n${line}` : line);
+                                onData(addedNewLine ? `\r\n${part}` : part);
                                 addedNewLine = true;
                             }
                             break;
@@ -127,12 +125,13 @@ export class Pty {
                     }
                 };
 
-                for (const line of lines) {
-                    handleLine(line);
+                for (const part of parts) {
+                    handlePart(part);
                 }
 
-                if (state === 2) {
-                    handleLine(lastLine);
+                if (state === 2 && pending.length > 0) {
+                    handlePart(pending);
+                    pending = "";
                 }
             });
 
