@@ -1,5 +1,4 @@
 import * as xterm from "@xterm/xterm";
-import clipboard from "clipboardy";
 
 type TerminalOptions = xterm.ITerminalOptions & xterm.ITerminalInitOnlyOptions;
 
@@ -19,10 +18,8 @@ export class Terminal extends xterm.Terminal {
 
         this.onSelectionChange(async () => {
             const selection = this.getSelection().trim();
-            if (selection) {
-                // TODO: Use vscode API to write to clipboard instead of clipboardy
-                // await vscode.env.clipboard.writeText(this.getSelection());
-                await clipboard.write(selection);
+            if (selection.length > 0) {
+                await navigator.clipboard.writeText(selection);
             }
         });
     }

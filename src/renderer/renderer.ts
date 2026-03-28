@@ -1,4 +1,3 @@
-import clipboard from "clipboardy";
 import type { ActivationFunction, OutputItem } from "vscode-notebook-renderer";
 import type { ExtensionMessage } from "../common/ExtensionMessage";
 import type {
@@ -47,9 +46,7 @@ export const activate: ActivationFunction = (context) => {
         });
 
         element.addEventListener("contextmenu", async () => {
-            // TODO: Use vscode API to write to clipboard instead of clipboardy
-            // const text = await vscode.env.clipboard.getText();
-            const text = await clipboard.read();
+            const text = await navigator.clipboard.readText();
             term.paste(text);
         });
 
