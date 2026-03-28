@@ -2,7 +2,7 @@
     "name": "bashbook",
     "displayName": "BashBook",
     "description": "Notebook for running bash/shell script",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "publisher": "AndreasArvidsson",
     "license": "MIT",
     "repository": {
@@ -225,7 +225,7 @@
         "@xterm/xterm": "^6.0.0",
         "electron": "39.8.3",
         "oxfmt": "^0.42.0",
-        "oxlint-tsgolint": "^0.17.4",
+        "oxlint-tsgolint": "^0.18.1",
         "oxlint": "^1.57.0",
         "typescript": "^6.0.2",
         "vite": "^8.0.3",
