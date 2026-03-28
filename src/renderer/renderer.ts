@@ -7,9 +7,23 @@ import type {
     OutputMessageCompleted,
 } from "../common/OutputMessage";
 import { Terminal } from "./Terminal";
+import terminalCss from "./Terminal.css?inline";
+import xtermCss from "@xterm/xterm/css/xterm.css?inline";
 
 export const activate: ActivationFunction = (context) => {
     const uriMap = new Map<string, Terminal>();
+    let stylesInjected = false;
+
+    const ensureStyles = () => {
+        if (stylesInjected) {
+            return;
+        }
+
+        const style = document.createElement("style");
+        style.textContent = `${xtermCss}\n${terminalCss}`;
+        document.head.append(style);
+        stylesInjected = true;
+    };
 
     const postMessage = (message: ExtensionMessage) => {
         context.postMessage?.(message);
@@ -71,15 +85,11 @@ export const activate: ActivationFunction = (context) => {
         { notebookUri, cellUri, data, cols }: OutputMessageCompleted,
         element: HTMLElement,
     ) => {
-        let term = uriMap.get(cellUri);
+        uriMap.get(cellUri)?.dispose();
 
-        if (!term) {
-            term = new Terminal({ cols });
-            uriMap.set(cellUri, term);
-            term.write(data);
-        }
-
-        term.open(element);
+        const term = createTerminal(notebookUri, cellUri, cols, element);
+        uriMap.set(cellUri, term);
+        term.write(data);
 
         // Stop listening for keyboard inputs
         term.disableInput();
@@ -96,15 +106,15 @@ export const activate: ActivationFunction = (context) => {
     };
 
     const renderOutputItem = (outputItem: OutputItem, element: HTMLElement) => {
+        ensureStyles();
+
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const message = outputItem.json() as OutputMessage;
         switch (message.type) {
             case "executing":
-                console.log("executing", [message.data]);
                 onExecutingMessage(message, element);
                 break;
             case "completed":
-                console.log("completed", [message.data]);
                 onCompletedMessage(message, element);
                 break;
             default:

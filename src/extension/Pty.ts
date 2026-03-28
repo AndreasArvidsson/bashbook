@@ -89,6 +89,7 @@ export class Pty {
             let state = 0;
             let result: Result = { exitCode: -1, cwd: "" };
             let lastLine = "";
+            let addedNewLine = false;
             const disposable = this.pty.onData((data) => {
                 const lines = data.split(/\r?\n/);
                 lines[0] = lastLine + lines[0];
@@ -112,7 +113,8 @@ export class Pty {
                                 };
                                 state = 2;
                             } else {
-                                onData(`${line}\n`);
+                                onData(addedNewLine ? `\r\n${line}` : line);
+                                addedNewLine = true;
                             }
                             break;
                         }

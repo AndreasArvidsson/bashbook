@@ -1,9 +1,5 @@
 import * as xterm from "@xterm/xterm";
 import clipboard from "clipboardy";
-// oxlint-disable-next-line import/no-unassigned-import
-import "@xterm/xterm/css/xterm.css";
-// oxlint-disable-next-line import/no-unassigned-import
-import "./Terminal.css";
 
 type TerminalOptions = xterm.ITerminalOptions & xterm.ITerminalInitOnlyOptions;
 
@@ -32,6 +28,10 @@ export class Terminal extends xterm.Terminal {
     }
 
     write(data: string): void {
+        if (this.options.disableStdin) {
+            return;
+        }
+
         super.write(data);
         this.dataContent += data;
 

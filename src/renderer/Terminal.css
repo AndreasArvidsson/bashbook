@@ -1,10 +1,15 @@
 .output_container > .output {
-    padding: 6px !important;
+    background-color: var(--vscode-notebook-background) !important;
+}
+
+.xterm-viewport {
+    overflow: auto !important;
 }
 
 /* Background color */
-.xterm-viewport {
-    background-color: var(--theme-background) !important;
+.xterm-viewport,
+.xterm-scrollable-element {
+    background-color: inherit !important;
 }
 
 /* Style row text */
