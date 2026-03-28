@@ -9,8 +9,8 @@ export class ProfileCsh implements Profile {
         return "csh";
     }
 
-    getPrompts(prompt: string): string {
-        return [`set prompt="${prompt}"`, `set prompt2="${prompt}"`, ""].join(
+    getPrompts(prompt1: string, prompt2: string): string {
+        return [`set prompt="${prompt1}"`, `set prompt2="${prompt2}"`, ""].join(
             "\r",
         );
     }

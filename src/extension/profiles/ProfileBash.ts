@@ -9,8 +9,8 @@ export class ProfileBash implements Profile {
         return os.platform() === "win32" ? "bash.exe" : "bash";
     }
 
-    getPrompts(prompt: string): string {
-        return [`export PS1='${prompt}'`, `export PS2='${prompt}'`, ""].join(
+    getPrompts(prompt1: string, prompt2: string): string {
+        return [`export PS1='${prompt1}'`, `export PS2='${prompt2}'`, ""].join(
             "\r",
         );
     }

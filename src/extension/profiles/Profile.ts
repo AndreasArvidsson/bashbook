@@ -1,7 +1,7 @@
 export interface Profile {
     useConpty?: boolean;
     getShell(): string;
-    getPrompts(prompt: string): string;
+    getPrompts(prompt1: string, prompt2: string): string;
     getResultCommand(uuid: string): string;
     wrapCommand(command: string): string;
     updateRootPath(path: string): string;

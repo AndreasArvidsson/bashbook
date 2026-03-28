@@ -8,8 +8,8 @@ const CTRL_C = "\u0003";
 const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";
 const START = "b83a4057-START-3b189d7c1ce9";
 const ROWS = 30;
-const PROMPT = "> ";
-const PROMPT_MATCH = PROMPT.trimEnd();
+const PROMPT1 = ">";
+const PROMPT2 = "> ";
 const SPLIT_REGEX = new RegExp(String.raw`\r?\n|(?=\|${UUID}\|)`);
 const RESULT_REGEX = new RegExp(String.raw`^\|${UUID}\|(\d+)\|(.+)\|`);
 
@@ -45,7 +45,7 @@ export class Pty {
         });
 
         this.pid = this.pty.pid;
-        this.pty.write(graph.profile.getPrompts(PROMPT));
+        this.pty.write(graph.profile.getPrompts(PROMPT1, PROMPT2));
         this.ready = this.waitForStartSignal();
     }
 
@@ -115,13 +115,14 @@ export class Pty {
                             break;
                         }
                         case 2:
-                            if (cleanedLine === PROMPT_MATCH) {
+                            if (cleanedLine === PROMPT1) {
                                 disposable.dispose();
+                                state = 3;
                                 resolve(result);
                             }
                             break;
                         default:
-                            throw new Error(`invalid state: ${state}`);
+                            console.warn(`invalid state: ${state}`);
                     }
                 };
 
@@ -150,7 +151,7 @@ export class Pty {
                     const cleanedLine = cleanAnsi(line);
 
                     if (started) {
-                        if (cleanedLine === PROMPT_MATCH) {
+                        if (cleanedLine === PROMPT1) {
                             disposable.dispose();
                             resolve();
                             break;
