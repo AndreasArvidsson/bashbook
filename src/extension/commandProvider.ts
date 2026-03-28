@@ -129,9 +129,16 @@ async function executeWithMarkdownOutput(
         }
     }
 
-    const plaintext = await controller.doExecution(cellInput, {
-        noOutput: true,
-    });
+    let plaintext: string;
+    try {
+        plaintext = await controller.doExecution(cellInput, {
+            noOutput: true,
+        });
+    } catch (error) {
+        console.error(error);
+        return;
+    }
+
     editorInput.selections = [getRangeForDocument(editorInput)];
 
     if (cellOutput == null) {

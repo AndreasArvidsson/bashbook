@@ -39,7 +39,7 @@ function parseVariable(
 }
 
 function cellToString(cell: NotebookCell): string {
-    if (cell.executionSummary?.success == null) {
+    if (!cell.executionSummary?.success) {
         throw new Error(
             `Can't use output from failed execution [${cell.executionSummary?.executionOrder}]`,
         );

@@ -22,6 +22,7 @@ interface CommandExecution {
     cellUri: string;
     options: ExecutionOptions;
     resolve?: (value: string) => void;
+    reject?: (reason: string) => void;
 }
 
 export class Notebook {
@@ -53,6 +54,7 @@ export class Notebook {
         execution: vscode.NotebookCellExecution,
         executionOptions: ExecutionOptions = {},
         resolve?: (value: string) => void,
+        reject?: (reason: string) => void,
     ): Promise<void> {
         execution.executionOrder = ++this.executionOrder;
         execution.start(Date.now());
@@ -85,6 +87,7 @@ export class Notebook {
             cellUri,
             options: executionOptions,
             resolve,
+            reject,
         });
 
         this.graph.historyPush(command);
@@ -99,7 +102,7 @@ export class Notebook {
         if (commandExecution == null) {
             return;
         }
-        const { command, execution, cellUri, options, resolve } =
+        const { command, execution, cellUri, options, resolve, reject } =
             commandExecution;
         const { noOutput } = options;
 
@@ -196,7 +199,11 @@ export class Notebook {
 
             this.isExecuting = undefined;
 
-            resolve?.(plaintext);
+            if (success) {
+                resolve?.(plaintext);
+            } else {
+                reject?.(plaintext);
+            }
 
             this.runExecutionQueue();
         };

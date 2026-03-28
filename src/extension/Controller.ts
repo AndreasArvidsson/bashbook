@@ -49,7 +49,7 @@ export class Controller {
         cell: vscode.NotebookCell,
         options: ExecutionOptions = {},
     ): Promise<string> {
-        return new Promise<string>((resolve) => {
+        return new Promise<string>((resolve, reject) => {
             const notebookInstance = this.getOrCreateNotebook(
                 cell.notebook.uri,
             );
@@ -58,6 +58,7 @@ export class Controller {
                 this.controller.createNotebookCellExecution(cell),
                 options,
                 resolve,
+                reject,
             );
         });
     }
