@@ -8,9 +8,10 @@ on:
 
 jobs:
   publish:
+    name: Publish to marketplace
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     environment: Production
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Download artifacts

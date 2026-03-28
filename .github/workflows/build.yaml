@@ -4,7 +4,6 @@ on:
   push:
     branches: [master, develop]
   pull_request:
-    branches: master
     types: [opened, synchronize, reopened]
 
 jobs:
@@ -63,7 +62,7 @@ jobs:
         run: npm run rebuild
 
       - name: Set target environment
-        run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
+        run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> "$GITHUB_ENV"
         shell: bash
 
       - name: Package extension
