@@ -1,17 +1,20 @@
 import type { IPty } from "node-pty";
 import { spawn } from "node-pty";
 import { commands } from "vscode";
-import type { Graph, Result } from "./types";
+import type { Profile } from "./profiles/Profile";
+import type { Result } from "./types";
 import { cleanAnsi } from "./util/ansiRegex";
+import {
+    generatePrompt,
+    generateStart,
+    generateToken,
+} from "./util/generatePrompts";
 
 const CTRL_C = "\u0003";
-const UUID = "b83a4057-8ba5-4546-92c6-3b189d7c1ce9";
-const START = "b83a4057-START-3b189d7c1ce9";
 const ROWS = 30;
-const PROMPT1 = ">";
+const PROMPT = generatePrompt();
 const PROMPT2 = "> ";
-const SPLIT_REGEX = new RegExp(String.raw`\r?\n|(?=\|${UUID}\|)`);
-const RESULT_REGEX = new RegExp(String.raw`^\|${UUID}\|(\d+)\|(.+)\|`);
+const SPLIT_REGEX = new RegExp(String.raw`\r?\n|(?=${PROMPT})`);
 
 export class Pty {
     public pid: number;
@@ -21,7 +24,7 @@ export class Pty {
     constructor(
         shell: string,
         cwd: string,
-        private readonly graph: Graph,
+        private readonly profile: Profile,
     ) {
         try {
             this.pty = spawn(shell, [], {
@@ -31,7 +34,7 @@ export class Pty {
                 cwd,
                 // oxlint-disable-next-line node/no-process-env
                 env: process.env,
-                useConpty: graph.profile.useConpty,
+                useConpty: profile.useConpty,
             });
         } catch (error: unknown) {
             console.error(`failed to launch: ${shell}`);
@@ -45,7 +48,8 @@ export class Pty {
         });
 
         this.pid = this.pty.pid;
-        this.pty.write(graph.profile.getPrompts(PROMPT1, PROMPT2));
+        this.pty.write(`${profile.getPromtp1(PROMPT)}\r`);
+        this.pty.write(`${profile.getPrompt2(PROMPT2)}\r`);
         this.ready = this.waitForStartSignal();
     }
 
@@ -58,7 +62,8 @@ export class Pty {
     }
 
     setCols(colsSource: number): void {
-        const cols = Math.max(UUID.length, colsSource);
+        // Make sure there is enough space for the prompt and the exit code without wrapping
+        const cols = Math.max(PROMPT.length, colsSource);
         if (cols !== this.pty.cols) {
             this.pty.resize(cols, ROWS);
             this.pty.write("\r");
@@ -81,67 +86,78 @@ export class Pty {
 
         return new Promise<Result>((resolve) => {
             // 0: wait for start signal
-            // 1: wait for post-command result
-            // 2: wait for prompt match
+            // 1: wait for prompt
+            // 2: wait for result command completion
             let state = 0;
-            let result: Result = { exitCode: -1, cwd: "" };
-            let pending = "";
             let addedNewLine = false;
+            let result = "";
+            const token = generateToken();
+            const start = generateStart(token);
+            const resultCommand = this.profile.getResultCommand(token);
+            const resultRegex = new RegExp(
+                String.raw`\|${token}\|exit:(\d+)\|cwd:(.*)\|`,
+            );
             const disposable = this.pty.onData((data) => {
-                const parts = `${pending}${data}`.split(SPLIT_REGEX);
-                pending = parts.pop() ?? "";
+                const lines = data.split(SPLIT_REGEX);
 
-                const handlePart = (part: string) => {
-                    const cleanedLine = cleanAnsi(part);
+                for (const line of lines) {
+                    const cleanedLine = cleanAnsi(line);
 
                     switch (state) {
                         case 0:
-                            if (cleanedLine === START) {
+                            if (cleanedLine === start) {
                                 state = 1;
                             }
                             break;
                         case 1: {
-                            const match = RESULT_REGEX.exec(cleanedLine);
-                            if (match != null) {
-                                result = {
-                                    exitCode: Number.parseInt(match[1], 10),
-                                    cwd: match[2],
-                                };
+                            // Needs startsWith because the shell can print the
+                            // prompt together with the command input.
+                            if (cleanedLine.startsWith(PROMPT)) {
                                 state = 2;
+                                this.pty.write(`${resultCommand}\r`);
                             } else {
-                                onData(addedNewLine ? `\r\n${part}` : part);
+                                onData(addedNewLine ? `\r\n${line}` : line);
                                 addedNewLine = true;
                             }
                             break;
                         }
                         case 2:
-                            if (cleanedLine === PROMPT1) {
+                            // Here we want to match exactly for the prompt,
+                            // because we only want the end of the execution
+                            // and not echoed back commands.
+                            if (cleanedLine === PROMPT) {
+                                const match = resultRegex.exec(result);
+
+                                if (match == null) {
+                                    break;
+                                }
+
+                                const [, exitCode, cwd] = match;
                                 disposable.dispose();
                                 state = 3;
-                                resolve(result);
+
+                                resolve({
+                                    exitCode: Number.parseInt(exitCode, 10),
+                                    cwd,
+                                });
+                                return;
+                            } else if (cleanedLine !== resultCommand) {
+                                result += cleanedLine;
                             }
                             break;
                         default:
                             console.warn(`invalid state: ${state}`);
                     }
-                };
-
-                for (const part of parts) {
-                    handlePart(part);
-                }
-
-                if (state === 2 && pending.length > 0) {
-                    handlePart(pending);
-                    pending = "";
                 }
             });
 
-            const resultCommand = this.graph.profile.getResultCommand(UUID);
-            this.pty.write(`echo ${START}; ${command}; ${resultCommand}\r`);
+            this.pty.write(`echo ${start}; ${command}\r`);
         });
     }
 
     private waitForStartSignal(): Promise<void> {
+        const token = generateToken();
+        const start = generateStart(token);
         let started = false;
         return new Promise<void>((resolve) => {
             const disposable = this.pty.onData((data) => {
@@ -151,18 +167,18 @@ export class Pty {
                     const cleanedLine = cleanAnsi(line);
 
                     if (started) {
-                        if (cleanedLine === PROMPT1) {
+                        if (cleanedLine === PROMPT) {
                             disposable.dispose();
                             resolve();
                             break;
                         }
-                    } else if (cleanedLine === START) {
+                    } else if (cleanedLine === start) {
                         started = true;
                     }
                 }
             });
 
-            this.pty.write(`echo ${START}\r`);
+            this.pty.write(`echo ${start}\r`);
         });
     }
 }

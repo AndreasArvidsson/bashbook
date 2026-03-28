@@ -9,14 +9,16 @@ export class ProfileCsh implements Profile {
         return "csh";
     }
 
-    getPrompts(prompt1: string, prompt2: string): string {
-        return [`set prompt="${prompt1}"`, `set prompt2="${prompt2}"`, ""].join(
-            "\r",
-        );
+    getPromtp1(prompt: string): string {
+        return `set prompt="${prompt}"`;
     }
 
-    getResultCommand(uuid: string): string {
-        return `echo "|${uuid}|$status|\`pwd\`|"`;
+    getPrompt2(prompt: string): string {
+        return `set prompt2="${prompt}"`;
+    }
+
+    getResultCommand(token: string): string {
+        return `echo "|${token}|exit:$status|cwd:\`pwd\`|"`;
     }
 
     updateRootPath(rootPath: string): string {
@@ -25,10 +27,6 @@ export class ProfileCsh implements Profile {
 
     nodeToShellPath(shellPath: string): string {
         return shellPath;
-    }
-
-    wrapCommand(command: string): string {
-        return command;
     }
 
     async readHistory(): Promise<string[]> {

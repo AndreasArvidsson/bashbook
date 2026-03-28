@@ -1,36 +1,25 @@
 import * as vscode from "vscode";
 import type {
-    OutputMessageExecuting,
     OutputMessageCompleted,
+    OutputMessageExecuting,
 } from "../common/OutputMessage";
 import { MIME_BASHBOOK, MIME_PLAINTEXT } from "./Constants";
 import { Pty } from "./Pty";
-import type { Graph } from "./types";
+import type { CommandExecution, ExecutionOptions, Graph } from "./types";
 import { cleanAnsi } from "./util/ansiRegex";
 import { getNotebookDirectory } from "./util/getNotebookDirectory";
 import { getShell } from "./util/Options";
 import { sanitizeRendererData } from "./util/sanitizeRendererData";
 import { updateCommandForVariables } from "./util/updateCommandForVariables";
 
-export interface ExecutionOptions {
-    noOutput?: boolean;
-}
-
-interface CommandExecution {
-    command: string;
-    execution: vscode.NotebookCellExecution;
-    cellUri: string;
-    options: ExecutionOptions;
-    resolve?: (value: string) => void;
-    reject?: (reason: string) => void;
-}
-
 export class Notebook {
+    public cwd: string;
+
     private readonly executionQueue: CommandExecution[] = [];
     private readonly notebookUri;
     private readonly pty;
     private isExecuting?: CommandExecution;
-    private executionOrder = 0;
+    private nextExecutionOrder = 1;
 
     constructor(
         private readonly graph: Graph,
@@ -38,11 +27,12 @@ export class Notebook {
     ) {
         this.notebookUri = notebookUri.toString();
         const shell = getShell() ?? graph.profile.getShell();
-        const cwd = getNotebookDirectory(notebookUri);
+        this.cwd = getNotebookDirectory(notebookUri);
 
-        console.debug(`Spawning shell: '${shell}' @ '${cwd}'`);
+        console.debug(`Spawning shell: '${shell}' @ '${this.cwd}'`);
 
-        this.pty = new Pty(shell, cwd, graph);
+        graph.setCWD(this.cwd);
+        this.pty = new Pty(shell, this.cwd, graph.profile);
     }
 
     dispose(): void {
@@ -55,8 +45,9 @@ export class Notebook {
         resolve?: (value: string) => void,
         reject?: (reason: string) => void,
     ): Promise<void> {
-        execution.executionOrder = ++this.executionOrder;
+        execution.executionOrder = this.nextExecutionOrder++;
         execution.start(Date.now());
+
         await execution.clearOutput();
 
         const commands = this.graph.parser.getCommandLines(
@@ -78,7 +69,7 @@ export class Notebook {
             }
         });
 
-        const command = commands.join("; ");
+        const command = commands.join(" && ");
 
         this.executionQueue.push({
             command,
@@ -193,6 +184,7 @@ export class Notebook {
             execution.end(success, Date.now());
 
             if (cwd != null) {
+                this.cwd = cwd;
                 this.graph.setCWD(cwd);
             }
 

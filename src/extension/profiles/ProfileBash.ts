@@ -9,14 +9,16 @@ export class ProfileBash implements Profile {
         return os.platform() === "win32" ? "bash.exe" : "bash";
     }
 
-    getPrompts(prompt1: string, prompt2: string): string {
-        return [`export PS1='${prompt1}'`, `export PS2='${prompt2}'`, ""].join(
-            "\r",
-        );
+    getPromtp1(prompt: string): string {
+        return `export PS1='${prompt}'`;
     }
 
-    getResultCommand(uuid: string): string {
-        return `echo "|${uuid}|$?|$(pwd)|"`;
+    getPrompt2(prompt: string): string {
+        return `export PS2='${prompt}'`;
+    }
+
+    getResultCommand(token: string): string {
+        return `echo "|${token}|exit:$?|cwd:$(pwd)|"`;
     }
 
     updateRootPath(rootPath: string): string {
@@ -25,10 +27,6 @@ export class ProfileBash implements Profile {
 
     nodeToShellPath(shellPath: string): string {
         return shellPath;
-    }
-
-    wrapCommand(command: string): string {
-        return command;
     }
 
     async readHistory(): Promise<string[]> {

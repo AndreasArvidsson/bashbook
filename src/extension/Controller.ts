@@ -5,10 +5,8 @@ import {
     NOTEBOOK_LABEL,
     NOTEBOOK_TYPE,
 } from "./Constants";
-import type { ExecutionOptions } from "./Notebook";
 import { Notebook } from "./Notebook";
-import type { Graph } from "./types";
-import { getNotebookDirectory } from "./util/getNotebookDirectory";
+import type { ExecutionOptions, Graph } from "./types";
 
 export class Controller {
     private readonly controller: vscode.NotebookController;
@@ -33,13 +31,30 @@ export class Controller {
         this.notebooks.clear();
     }
 
+    onDidOpenNotebookDocument(document: vscode.NotebookDocument): void {
+        if (
+            document.notebookType === NOTEBOOK_TYPE &&
+            !this.notebooks.has(document.uri.toString())
+        ) {
+            this.notebooks.set(
+                document.uri.toString(),
+                new Notebook(this.graph, document.uri),
+            );
+        }
+    }
+
     onDidCloseNotebookDocument(document: vscode.NotebookDocument): void {
-        this.notebooks.get(document.uri.toString())?.dispose();
-        this.notebooks.delete(document.uri.toString());
+        if (document.notebookType === NOTEBOOK_TYPE) {
+            this.notebooks.get(document.uri.toString())?.dispose();
+            this.notebooks.delete(document.uri.toString());
+        }
     }
 
     syncNotebookDirectory(uri: vscode.Uri): void {
-        this.graph.setCWD(getNotebookDirectory(uri));
+        const notebook = this.notebooks.get(uri.toString());
+        if (notebook != null) {
+            this.graph.setCWD(notebook.cwd);
+        }
     }
 
     onData(notebookUri: string, cellUri: string, data: string): void {

@@ -1,9 +1,9 @@
 export interface Profile {
     useConpty?: boolean;
     getShell(): string;
-    getPrompts(prompt1: string, prompt2: string): string;
-    getResultCommand(uuid: string): string;
-    wrapCommand(command: string): string;
+    getPromtp1(prompt: string): string;
+    getPrompt2(prompt: string): string;
+    getResultCommand(token: string): string;
     updateRootPath(path: string): string;
     nodeToShellPath(path: string): string;
     readHistory(): Promise<string[]>;

@@ -37,6 +37,9 @@ export async function activate(
         controller,
         registerSerializer(),
         registerCommands(parser, controller),
+        vscode.workspace.onDidOpenNotebookDocument((document) => {
+            controller.onDidOpenNotebookDocument(document);
+        }),
         vscode.workspace.onDidCloseNotebookDocument((document) => {
             controller.onDidCloseNotebookDocument(document);
         }),
