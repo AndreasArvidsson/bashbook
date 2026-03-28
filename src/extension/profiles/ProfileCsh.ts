@@ -19,6 +19,10 @@ export class ProfileCsh implements Profile {
         );
     }
 
+    getResultCommand(): string {
+        return 'echo "|$status|`pwd`|"';
+    }
+
     updateRootPath(rootPath: string): string {
         return rootPath;
     }

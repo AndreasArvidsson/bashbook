@@ -19,6 +19,10 @@ export class ProfileBash implements Profile {
         );
     }
 
+    getResultCommand(): string {
+        return 'echo "|$?|$(pwd)|"';
+    }
+
     updateRootPath(rootPath: string): string {
         return rootPath;
     }

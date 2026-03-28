@@ -3,6 +3,7 @@ export interface Profile {
     getShell(): string;
     getShellArgs(): string[];
     getPrompts(prompt: string): string;
+    getResultCommand(): string;
     wrapCommand(command: string): string;
     updateRootPath(path: string): string;
     nodeToShellPath(path: string): string;

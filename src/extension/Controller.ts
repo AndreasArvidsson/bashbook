@@ -50,14 +50,11 @@ export class Controller {
         options: ExecutionOptions = {},
     ): Promise<string> {
         return new Promise<string>((resolve) => {
-            const notebook = this.notebooks.get(cell.notebook.uri.toString());
+            const notebookInstance = this.getOrCreateNotebook(
+                cell.notebook.uri,
+            );
 
-            if (notebook == null) {
-                resolve("");
-                return;
-            }
-
-            void notebook.doExecution(
+            void notebookInstance.doExecution(
                 this.controller.createNotebookCellExecution(cell),
                 options,
                 resolve,
@@ -69,12 +66,7 @@ export class Controller {
         cells: vscode.NotebookCell[],
         notebook: vscode.NotebookDocument,
     ): Promise<void> {
-        let notebookInstance = this.notebooks.get(notebook.uri.toString());
-
-        if (notebookInstance == null) {
-            notebookInstance = new Notebook(this.graph, notebook.uri);
-            this.notebooks.set(notebook.uri.toString(), notebookInstance);
-        }
+        const notebookInstance = this.getOrCreateNotebook(notebook.uri);
 
         await Promise.all(
             cells.map((cell) =>
@@ -83,5 +75,16 @@ export class Controller {
                 ),
             ),
         );
+    }
+
+    private getOrCreateNotebook(uri: vscode.Uri) {
+        let notebookInstance = this.notebooks.get(uri.toString());
+
+        if (notebookInstance == null) {
+            notebookInstance = new Notebook(this.graph, uri);
+            this.notebooks.set(uri.toString(), notebookInstance);
+        }
+
+        return notebookInstance;
     }
 }

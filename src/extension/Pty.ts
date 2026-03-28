@@ -138,7 +138,9 @@ export class Pty {
                 }
             });
 
-            this.pty.write(`echo ${START}; ${command}; echo "|$?|$(pwd)|"\r`);
+            this.pty.write(
+                `echo ${START}; ${command}; ${this.graph.profile.getResultCommand()}\r`,
+            );
         });
     }
 
