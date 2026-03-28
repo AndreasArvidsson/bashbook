@@ -28,7 +28,7 @@ export class Pty {
         private readonly graph: Graph,
     ) {
         try {
-            this.pty = spawn(shell, graph.profile.getShellArgs(), {
+            this.pty = spawn(shell, [], {
                 name: "xterm-color",
                 cols: 80,
                 rows: ROWS,

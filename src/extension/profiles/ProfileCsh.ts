@@ -9,10 +9,6 @@ export class ProfileCsh implements Profile {
         return "csh";
     }
 
-    getShellArgs(): string[] {
-        return [];
-    }
-
     getPrompts(prompt: string): string {
         return [`set prompt="${prompt}"`, `set prompt2="${prompt}"`, ""].join(
             "\r",
@@ -20,7 +16,7 @@ export class ProfileCsh implements Profile {
     }
 
     getResultCommand(uuid: string): string {
-        return `echo "${uuid}|$status|$(pwd)|"`;
+        return `echo "${uuid}|$status|\`pwd\`|"`;
     }
 
     updateRootPath(rootPath: string): string {
