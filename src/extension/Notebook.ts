@@ -8,7 +8,7 @@ import { Pty } from "./Pty";
 import type { CommandExecution, ExecutionOptions, Graph } from "./types";
 import { cleanAnsi } from "./util/ansiRegex";
 import { getNotebookDirectory } from "./util/getNotebookDirectory";
-import { getShell } from "./util/Options";
+import { getDebug, getShell } from "./util/Options";
 import { sanitizeRendererData } from "./util/sanitizeRendererData";
 import { updateCommandForVariables } from "./util/updateCommandForVariables";
 
@@ -29,7 +29,9 @@ export class Notebook {
         const shell = getShell() ?? graph.profile.getShell();
         this.cwd = getNotebookDirectory(notebookUri);
 
-        console.debug(`Spawning shell: '${shell}' @ '${this.cwd}'`);
+        if (getDebug()) {
+            console.debug(`Spawning shell: '${shell}' @ '${this.cwd}'`);
+        }
 
         graph.setCWD(this.cwd);
         this.pty = new Pty(shell, this.cwd, graph.profile);
@@ -203,7 +205,7 @@ export class Notebook {
             this.pty.terminate();
             setTimeout(() => {
                 if (this.isExecuting?.cellUri === cellUri) {
-                    console.debug(
+                    console.warn(
                         "Execution is still running. Retry termination and end execution anyway.",
                     );
                     this.pty.terminate();

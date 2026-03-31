@@ -9,6 +9,7 @@ import {
     generateStart,
     generateToken,
 } from "./util/generatePrompts";
+import { getDebug } from "./util/Options";
 
 const CTRL_C = "\u0003";
 const ROWS = 30;
@@ -37,13 +38,15 @@ export class Pty {
                 useConpty: profile.useConpty,
             });
         } catch (error: unknown) {
-            console.error(`failed to launch: ${shell}`);
+            console.error(`Failed to launch: ${shell}`);
             console.error(error);
             throw error;
         }
 
         this.pty.onExit(() => {
-            console.debug("Exit");
+            if (getDebug()) {
+                console.debug("Exit shell");
+            }
             commands.executeCommand("workbench.action.closeActiveEditor");
         });
 
@@ -82,7 +85,17 @@ export class Pty {
         command: string,
         onData: (data: string) => void,
     ): Promise<Result> {
+        const debug = getDebug();
+
+        if (debug) {
+            console.debug(`Executing command: ${command}`);
+        }
+
         await this.ready;
+
+        if (debug) {
+            console.debug("Shell is ready");
+        }
 
         return new Promise<Result>((resolve) => {
             // 0: wait for start signal
@@ -97,11 +110,22 @@ export class Pty {
             const resultRegex = new RegExp(
                 String.raw`\|${token}\|exit:(\d+)\|cwd:(.*)\|`,
             );
+
             const disposable = this.pty.onData((data) => {
+                if (debug) {
+                    console.debug(`data: ${JSON.stringify(data)}`);
+                }
+
                 const lines = data.split(SPLIT_REGEX);
 
                 for (const line of lines) {
                     const cleanedLine = cleanAnsi(line);
+
+                    if (debug) {
+                        console.debug(
+                            `line: ${state} | ${JSON.stringify(cleanedLine)}`,
+                        );
+                    }
 
                     switch (state) {
                         case 0:
@@ -146,7 +170,7 @@ export class Pty {
                             }
                             break;
                         default:
-                            console.warn(`invalid state: ${state}`);
+                            console.warn(`Invalid state: ${state}`);
                     }
                 }
             });

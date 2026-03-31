@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 import { LANGUAGE } from "./Constants";
 import type { Profile } from "./profiles/Profile";
 import { getFilesForDirOrParent } from "./util/getFilesForDirOrParent";
+import { getDebug } from "./util/Options";
 
 const selector: vscode.DocumentSelector = { language: LANGUAGE };
 
@@ -116,8 +117,10 @@ export class BashCompletionItemProvider
             characterDelta: -existingName.length,
         });
 
-        console.debug(`Path: ${absPath}`);
-        console.debug(filteredFiles);
+        if (getDebug()) {
+            console.debug(`Path: ${absPath}`);
+            console.debug(filteredFiles);
+        }
 
         return filteredFiles.map((file) =>
             createFileCompletionItem(file, startPosition),

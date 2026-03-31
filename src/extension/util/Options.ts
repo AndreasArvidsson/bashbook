@@ -2,6 +2,12 @@ import { workspace } from "vscode";
 import { NOTEBOOK_TYPE } from "../Constants";
 import type { ProfileValue } from "../profiles/Profile";
 
+export function getProfile(): ProfileValue {
+    return workspace
+        .getConfiguration(NOTEBOOK_TYPE)
+        .get<ProfileValue>("profile", "Bash");
+}
+
 export function getShell(): string | undefined {
     const shell = workspace
         .getConfiguration(NOTEBOOK_TYPE)
@@ -9,8 +15,8 @@ export function getShell(): string | undefined {
     return shell.length > 0 ? shell : undefined;
 }
 
-export function getProfile(): ProfileValue {
+export function getDebug(): boolean {
     return workspace
         .getConfiguration(NOTEBOOK_TYPE)
-        .get<ProfileValue>("profile", "Bash");
+        .get<boolean>("debug", false);
 }
