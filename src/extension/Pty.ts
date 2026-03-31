@@ -115,10 +115,11 @@ export class Pty {
                     console.debug(`data: ${JSON.stringify(data)}`);
                 }
 
-                const combined = lastLine + data;
-                const lines = combined.split(SPLIT_REGEX);
-                const endsWithNewline = cleanAnsi(lines.at(-1) ?? "") === "";
-                lastLine = endsWithNewline ? "" : (lines.pop() ?? "");
+                const lines = (lastLine + data).split(SPLIT_REGEX);
+                // Pop of non-empty last line, because it can be incomplete.
+                lastLine = isNotEmpty(lines[lines.length - 1])
+                    ? (lines.pop() ?? "")
+                    : "";
 
                 const handleLine = (line: string): void => {
                     const cleanedLine = cleanAnsi(line);
@@ -246,4 +247,8 @@ function hasPartialPromptTail(value: string): boolean {
     }
 
     return false;
+}
+
+function isNotEmpty(input: string): boolean {
+    return cleanAnsi(input).length > 0;
 }
