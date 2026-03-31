@@ -1,6 +1,4 @@
-out
-dist
-node_modules
-.vscode-test/
-*.vsix
-*txt
+/node_modules/
+/out/
+/.vscode-test/
+/*.vsix

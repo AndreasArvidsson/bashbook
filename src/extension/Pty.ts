@@ -64,9 +64,7 @@ export class Pty {
         return this.pty.cols;
     }
 
-    setCols(colsSource: number): void {
-        // Make sure there is enough space for the prompt and the exit code without wrapping
-        const cols = Math.max(PROMPT.length, colsSource);
+    setCols(cols: number): void {
         if (cols !== this.pty.cols) {
             this.pty.resize(cols, ROWS);
             this.pty.write("\r");
@@ -98,32 +96,36 @@ export class Pty {
         }
 
         return new Promise<Result>((resolve) => {
-            // 0: wait for start signal
-            // 1: wait for prompt
-            // 2: wait for result command completion
-            let state = 0;
-            let addedNewLine = false;
-            let result = "";
             const token = generateToken();
             const start = generateStart(token);
             const resultCommand = this.profile.getResultCommand(token);
             const resultRegex = new RegExp(
                 String.raw`\|${token}\|exit:(\d+)\|cwd:(.*)\|`,
             );
+            // 0: wait for start signal
+            // 1: wait for prompt
+            // 2: wait for result command completion
+            let state = 0;
+            let addedNewLine = false;
+            let result = "";
+            let lastLine = "";
 
             const disposable = this.pty.onData((data) => {
                 if (debug) {
                     console.debug(`data: ${JSON.stringify(data)}`);
                 }
 
-                const lines = data.split(SPLIT_REGEX);
+                const combined = lastLine + data;
+                const lines = combined.split(SPLIT_REGEX);
+                const endsWithNewline = cleanAnsi(lines.at(-1) ?? "") === "";
+                lastLine = endsWithNewline ? "" : (lines.pop() ?? "");
 
-                for (const line of lines) {
+                const handleLine = (line: string): void => {
                     const cleanedLine = cleanAnsi(line);
 
                     if (debug) {
                         console.debug(
-                            `line: ${state} | ${JSON.stringify(cleanedLine)}`,
+                            `${state} | ${JSON.stringify(cleanedLine)}`,
                         );
                     }
 
@@ -164,7 +166,6 @@ export class Pty {
                                     exitCode: Number.parseInt(exitCode, 10),
                                     cwd,
                                 });
-                                return;
                             } else if (cleanedLine !== resultCommand) {
                                 result += cleanedLine;
                             }
@@ -172,6 +173,22 @@ export class Pty {
                         default:
                             console.warn(`Invalid state: ${state}`);
                     }
+                };
+
+                for (const line of lines) {
+                    handleLine(line);
+                }
+
+                if (lastLine.startsWith(PROMPT)) {
+                    handleLine(lastLine);
+                    lastLine = "";
+                } else if (
+                    state === 1 &&
+                    lastLine.length > 0 &&
+                    !hasPartialPromptTail(lastLine)
+                ) {
+                    onData(lastLine);
+                    lastLine = "";
                 }
             });
 
@@ -183,26 +200,50 @@ export class Pty {
         const token = generateToken();
         const start = generateStart(token);
         let started = false;
+        let lastLine = "";
+
         return new Promise<void>((resolve) => {
             const disposable = this.pty.onData((data) => {
-                const lines = data.split(/\r?\n/);
+                const lines = (lastLine + data).split(SPLIT_REGEX);
+                lastLine = lines.pop() ?? "";
 
-                for (const line of lines) {
+                const handleLine = (line: string): void => {
                     const cleanedLine = cleanAnsi(line);
 
                     if (started) {
                         if (cleanedLine === PROMPT) {
                             disposable.dispose();
                             resolve();
-                            break;
                         }
                     } else if (cleanedLine === start) {
                         started = true;
                     }
+                };
+
+                for (const line of lines) {
+                    handleLine(line);
+                }
+
+                if (lastLine.startsWith(PROMPT)) {
+                    handleLine(lastLine);
+                    lastLine = "";
                 }
             });
 
             this.pty.write(`echo ${start}\r`);
         });
     }
+}
+
+function hasPartialPromptTail(value: string): boolean {
+    const cleaned = cleanAnsi(value);
+    const length = Math.min(cleaned.length, PROMPT.length - 1);
+
+    for (let i = 1; i <= length; i++) {
+        if (cleaned.endsWith(PROMPT.slice(0, i))) {
+            return true;
+        }
+    }
+
+    return false;
 }
