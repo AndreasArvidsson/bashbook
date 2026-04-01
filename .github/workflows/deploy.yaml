@@ -1,4 +1,4 @@
-name: Publish
+name: Deploy
 
 on:
   workflow_run:
@@ -6,8 +6,12 @@ on:
     types: [completed]
     branches: [master]
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
-  publish:
+  publish-extension:
     name: Publish to marketplace
     runs-on: ubuntu-latest
     environment: Production
@@ -18,8 +22,9 @@ jobs:
         uses: dawidd6/action-download-artifact@v19
         with:
           workflow: build.yaml
+          run_id: ${{ github.event.workflow_run.id }}
 
-      - name: Publish extension
+      - name: Publish to Visual Studio Marketplace
         run: npx vsce publish --packagePath $(find . -iname *.vsix)
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}

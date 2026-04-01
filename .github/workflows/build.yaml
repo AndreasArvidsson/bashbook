@@ -1,10 +1,9 @@
 name: Build
 
 on:
-  push:
-    branches: [master, develop]
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
 
 jobs:
   build:
@@ -41,10 +40,13 @@ jobs:
             arch: arm64
             npm_config_arch: arm64
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -55,11 +57,10 @@ jobs:
       - name: Install dependencies
         run: npm --color ci
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_arch: ${{ matrix.npm_config_arch }}
 
       - name: Rebuild native modules
-        run: npm run rebuild
+        run: npm --color run rebuild
 
       - name: Set target environment
         run: echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> "$GITHUB_ENV"

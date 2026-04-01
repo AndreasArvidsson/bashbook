@@ -57,7 +57,7 @@ export class Notebook {
 
         if (commands.length === 0) {
             execution.end(true, Date.now());
-            this.isExecuting = undefined;
+            this.runExecutionQueue();
             return;
         }
 

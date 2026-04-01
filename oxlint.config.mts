@@ -66,6 +66,7 @@ export default defineConfig({
     env: {
         node: true,
         browser: true,
+        mocha: true,
     },
     plugins: [
         "eslint",

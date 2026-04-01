@@ -4,7 +4,14 @@ import { getDebug, onDebugChange } from "./util/Options";
 
 let debug = false;
 
-export const logger = {
+export interface Logger {
+    debug(message: string): void;
+    log(message: string): void;
+    warn(message: string): void;
+    error(message: string, error?: unknown): void;
+}
+
+export const logger: Logger = {
     debug: (message: string): void => {
         if (debug) {
             console.debug(`[${NOTEBOOK_LABEL}] ${message}`);
