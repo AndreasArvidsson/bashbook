@@ -148,6 +148,10 @@ export class Pty {
                                 disposable.dispose();
                                 state = 3;
 
+                                logger.debug(
+                                    `Command execution completed with exit code ${exitCode} and cwd ${cwd}`,
+                                );
+
                                 resolve({
                                     exitCode: Number.parseInt(exitCode, 10),
                                     cwd,
