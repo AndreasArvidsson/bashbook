@@ -10,16 +10,12 @@ export function getProfile(): ProfileValue {
 }
 
 export function getShell(): string | undefined {
-    const shell = workspace
-        .getConfiguration(NOTEBOOK_TYPE)
-        .get<string>("shell", "");
+    const shell = workspace.getConfiguration(NOTEBOOK_TYPE).get("shell", "");
     return shell.length > 0 ? shell : undefined;
 }
 
 export function getDebug(): boolean {
-    return workspace
-        .getConfiguration(NOTEBOOK_TYPE)
-        .get<boolean>("debug", false);
+    return workspace.getConfiguration(NOTEBOOK_TYPE).get("debug", false);
 }
 
 export function onDebugChange(callback: () => void): Disposable {
