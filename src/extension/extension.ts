@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 import type { ExtensionMessage } from "../common/ExtensionMessage";
 import { registerCommands } from "./commandProvider";
-import { RENDERER_ID } from "./Constants";
+import { RENDERER_ID } from "./constants";
 import { Controller } from "./Controller";
 import { registerLanguageProvider } from "./languageProvider";
+import { initLogger } from "./logger";
 import { createProfile } from "./profiles/createProfile";
 import { registerSerializer } from "./Serializer";
 import type { Graph } from "./types";
@@ -33,6 +34,7 @@ export async function activate(
     const controller = new Controller(graph);
 
     context.subscriptions.push(
+        initLogger(context.extensionMode),
         languageDisposable,
         controller,
         registerSerializer(),

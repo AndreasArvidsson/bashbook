@@ -1,5 +1,6 @@
 import { workspace } from "vscode";
-import { NOTEBOOK_TYPE } from "../Constants";
+import type { Disposable } from "vscode";
+import { NOTEBOOK_TYPE } from "../constants";
 import type { ProfileValue } from "../profiles/Profile";
 
 export function getProfile(): ProfileValue {
@@ -19,4 +20,13 @@ export function getDebug(): boolean {
     return workspace
         .getConfiguration(NOTEBOOK_TYPE)
         .get<boolean>("debug", false);
+}
+
+export function onDebugChange(callback: () => void): Disposable {
+    const config = `${NOTEBOOK_TYPE}.debug`;
+    return workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration(config)) {
+            callback();
+        }
+    });
 }

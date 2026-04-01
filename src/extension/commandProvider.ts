@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { LANGUAGE, MIME_PLAINTEXT, NOTEBOOK_TYPE } from "./Constants";
+import { LANGUAGE, MIME_PLAINTEXT, NOTEBOOK_TYPE } from "./constants";
 import type { Controller } from "./Controller";
 import type { CommandParser } from "./util/CommandParser";
 

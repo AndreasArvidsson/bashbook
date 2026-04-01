@@ -1,6 +1,7 @@
 import type { IPty } from "node-pty";
 import { spawn } from "node-pty";
 import { commands } from "vscode";
+import { logger } from "./logger";
 import type { Profile } from "./profiles/Profile";
 import type { Result } from "./types";
 import { cleanAnsi } from "./util/ansiRegex";
@@ -9,7 +10,6 @@ import {
     generateStart,
     generateToken,
 } from "./util/generatePrompts";
-import { getDebug } from "./util/Options";
 
 const CTRL_C = "\u0003";
 const ROWS = 30;
@@ -38,15 +38,12 @@ export class Pty {
                 useConpty: profile.useConpty,
             });
         } catch (error: unknown) {
-            console.error(`Failed to launch: ${shell}`);
-            console.error(error);
+            logger.error(`Failed to launch: ${shell}`, error);
             throw error;
         }
 
         this.pty.onExit(() => {
-            if (getDebug()) {
-                console.debug("Exit shell");
-            }
+            logger.debug("Exit shell");
             commands.executeCommand("workbench.action.closeActiveEditor");
         });
 
@@ -83,17 +80,11 @@ export class Pty {
         command: string,
         onData: (data: string) => void,
     ): Promise<Result> {
-        const debug = getDebug();
-
-        if (debug) {
-            console.debug(`Executing command: ${command}`);
-        }
+        logger.debug(`Executing command: ${command}`);
 
         await this.ready;
 
-        if (debug) {
-            console.debug("Shell is ready");
-        }
+        logger.debug("Shell is ready");
 
         return new Promise<Result>((resolve) => {
             const token = generateToken();
@@ -111,9 +102,7 @@ export class Pty {
             let lastLine = "";
 
             const disposable = this.pty.onData((data) => {
-                if (debug) {
-                    console.debug(`data: ${JSON.stringify(data)}`);
-                }
+                logger.debug(`data: ${JSON.stringify(data)}`);
 
                 const lines = (lastLine + data).split(SPLIT_REGEX);
                 // Pop of non-empty last line, because it can be incomplete.
@@ -124,11 +113,7 @@ export class Pty {
                 const handleLine = (line: string): void => {
                     const cleanedLine = cleanAnsi(line);
 
-                    if (debug) {
-                        console.debug(
-                            `${state} | ${JSON.stringify(cleanedLine)}`,
-                        );
-                    }
+                    logger.debug(`${state} | ${JSON.stringify(cleanedLine)}`);
 
                     switch (state) {
                         case 0:
@@ -172,7 +157,7 @@ export class Pty {
                             }
                             break;
                         default:
-                            console.warn(`Invalid state: ${state}`);
+                            logger.warn(`Invalid state: ${state}`);
                     }
                 };
 
@@ -198,6 +183,8 @@ export class Pty {
     }
 
     private waitForStartSignal(): Promise<void> {
+        logger.debug("Waiting for start signal");
+
         const token = generateToken();
         const start = generateStart(token);
         let started = false;
@@ -205,14 +192,21 @@ export class Pty {
 
         return new Promise<void>((resolve) => {
             const disposable = this.pty.onData((data) => {
+                logger.debug(`data: ${JSON.stringify(data)}`);
+
                 const lines = (lastLine + data).split(SPLIT_REGEX);
                 lastLine = lines.pop() ?? "";
 
                 const handleLine = (line: string): void => {
                     const cleanedLine = cleanAnsi(line);
 
+                    logger.debug(
+                        `${started ? 1 : 0} | ${JSON.stringify(cleanedLine)}`,
+                    );
+
                     if (started) {
                         if (cleanedLine === PROMPT) {
+                            logger.debug("Received start signal");
                             disposable.dispose();
                             resolve();
                         }

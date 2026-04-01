@@ -1,6 +1,6 @@
 import { TextDecoder, TextEncoder } from "node:util";
 import * as vscode from "vscode";
-import { NOTEBOOK_TYPE } from "./Constants";
+import { NOTEBOOK_TYPE } from "./constants";
 
 type Metadata = Record<string, unknown>;
 

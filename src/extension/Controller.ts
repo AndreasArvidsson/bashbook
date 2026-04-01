@@ -4,7 +4,7 @@ import {
     LANGUAGE,
     NOTEBOOK_LABEL,
     NOTEBOOK_TYPE,
-} from "./Constants";
+} from "./constants";
 import { Notebook } from "./Notebook";
 import type { ExecutionOptions, Graph } from "./types";
 
