@@ -16,7 +16,7 @@ const PROMPT2 = "> ";
 export class Pty {
     public pid: number;
     private readonly pty: IPty;
-    private readonly ready: Promise<void>;
+    private ready?: Promise<void>;
 
     constructor(
         shell: string,
@@ -46,7 +46,6 @@ export class Pty {
         this.pid = this.pty.pid;
         this.pty.write(`${profile.getPromtp1(PROMPT)}\r`);
         this.pty.write(`${profile.getPrompt2(PROMPT2)}\r`);
-        this.ready = this.waitForStartSignal();
     }
 
     dispose(): void {
@@ -78,7 +77,14 @@ export class Pty {
     ): Promise<Result> {
         logger.debug(`Write command: ${command}`);
 
-        await this.ready;
+        this.ready ??= this.waitForStartSignal();
+
+        try {
+            await this.ready;
+        } catch (error) {
+            this.ready = undefined;
+            throw error;
+        }
 
         logger.debug("Shell is ready");
 

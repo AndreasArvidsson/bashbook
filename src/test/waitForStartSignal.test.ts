@@ -1,5 +1,6 @@
 // oxlint-disable unicorn/escape-case
 import * as assert from "node:assert/strict";
+import { START_SIGNAL_TIMEOUT_MS } from "../extension/constants";
 import { waitForStartSignal } from "../extension/waitForStartSignal";
 import { FakePty, token, prompt, logger } from "./testUtils";
 
@@ -52,4 +53,92 @@ suite("waitForStartSignal", () => {
             assert.equal(pty.disposed, true);
         });
     });
+
+    test("Rejects with timeout while waiting for custom prompt", async () => {
+        const pty = new FakePty();
+        const { restore, runTimer } = stubTimers();
+
+        try {
+            const waitPromise = waitForStartSignal(logger, pty, token, prompt);
+
+            pty.emit(`echo __BASHBOOK_START_${token}__\r\n`);
+            pty.emit(`__BASHBOOK_START_${token}__\r\n`);
+
+            runTimer();
+
+            await assert.rejects(waitPromise, {
+                message: "Timeout waiting for custom prompt",
+            });
+            assert.equal(pty.disposed, true);
+        } finally {
+            restore();
+        }
+    });
+
+    test("Keeps waiting when prompt arrives just before timeout", async () => {
+        const pty = new FakePty();
+        const { restore, hasScheduledTimer } = stubTimers();
+
+        try {
+            const waitPromise = waitForStartSignal(logger, pty, token, prompt);
+
+            pty.emit(`echo __BASHBOOK_START_${token}__\r\n`);
+            pty.emit(`__BASHBOOK_START_${token}__\r\n`);
+            assert.equal(hasScheduledTimer(), true);
+            pty.emit(prompt);
+
+            await waitPromise;
+
+            assert.equal(hasScheduledTimer(), false);
+            assert.equal(pty.disposed, true);
+        } finally {
+            restore();
+        }
+    });
 });
+
+function stubTimers(): {
+    restore: () => void;
+    hasScheduledTimer: () => boolean;
+    runTimer: () => void;
+} {
+    const originalSetTimeout = globalThis.setTimeout;
+    const originalClearTimeout = globalThis.clearTimeout;
+    let nextId = 1;
+    const timers = new Map<number, () => void>();
+
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    globalThis.setTimeout = ((
+        callback: (...args: never[]) => void,
+        ms?: number,
+    ) => {
+        assert.equal(ms, START_SIGNAL_TIMEOUT_MS);
+        const id = nextId++;
+        timers.set(id, callback);
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+        return id as unknown as NodeJS.Timeout;
+    }) as unknown as typeof globalThis.setTimeout;
+
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    globalThis.clearTimeout = ((timeoutId: NodeJS.Timeout | number) => {
+        timers.delete(Number(timeoutId));
+    }) as typeof globalThis.clearTimeout;
+
+    return {
+        restore: () => {
+            globalThis.setTimeout = originalSetTimeout;
+            globalThis.clearTimeout = originalClearTimeout;
+        },
+        hasScheduledTimer: () => timers.size > 0,
+        runTimer: () => {
+            const [timer] = timers.values();
+            assert.notEqual(
+                timer,
+                undefined,
+                "Expected timeout to be scheduled",
+            );
+            timers.clear();
+            timer();
+        },
+    };
+}

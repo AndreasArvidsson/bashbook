@@ -1,5 +1,6 @@
-import { ExtensionMode, Disposable } from "vscode";
+import { Disposable, ExtensionMode } from "vscode";
 import { NOTEBOOK_LABEL } from "./constants";
+import { getErrorMessage } from "./util/getErrorMessage";
 import { getDebug, onDebugChange } from "./util/Options";
 
 let debug = false;
@@ -26,9 +27,7 @@ export const logger: Logger = {
     error: (message: string, error?: unknown): void => {
         const msg = `[${NOTEBOOK_LABEL}] ${message}`;
         if (error != null) {
-            const errorMsg =
-                error instanceof Error ? error.message : JSON.stringify(error);
-            console.error(`${msg}: ${errorMsg}`);
+            console.error(`${msg}: ${getErrorMessage(error)}`);
         } else {
             console.error(msg);
         }

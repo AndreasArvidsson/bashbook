@@ -8,6 +8,7 @@ import { logger } from "./logger";
 import { Pty } from "./Pty";
 import type { CommandExecution, ExecutionOptions, Graph } from "./types";
 import { cleanAnsi } from "./util/ansiRegex";
+import { getErrorMessage } from "./util/getErrorMessage";
 import { getNotebookDirectory } from "./util/getNotebookDirectory";
 import { getShell } from "./util/Options";
 import { sanitizeRendererData } from "./util/sanitizeRendererData";
@@ -105,20 +106,28 @@ export class Notebook {
 
         this.isExecuting = commandExecution;
 
-        // Update command with variables
-        let updatedCommand;
-        try {
-            updatedCommand = updateCommandForVariables(command, execution);
-        } catch (error: unknown) {
-            const err =
-                error instanceof Error ? error : new Error(String(error));
+        const onError = (error: unknown): void => {
+            const message = getErrorMessage(error);
             execution.replaceOutput(
                 new vscode.NotebookCellOutput([
-                    vscode.NotebookCellOutputItem.error(err),
+                    vscode.NotebookCellOutputItem.text(
+                        `ERROR: ${message}`,
+                        MIME_PLAINTEXT,
+                    ),
                 ]),
             );
             execution.end(false, Date.now());
             this.isExecuting = undefined;
+            reject?.(message);
+            this.runExecutionQueue();
+        };
+
+        // Update command with variables
+        let updatedCommand;
+        try {
+            updatedCommand = updateCommandForVariables(command, execution);
+        } catch (error) {
+            onError(error);
             return;
         }
 
@@ -214,8 +223,15 @@ export class Notebook {
         });
 
         void (async () => {
-            const result = await this.pty.writeCommand(updatedCommand, onData);
-            end(result.exitCode === 0, result.cwd);
+            try {
+                const result = await this.pty.writeCommand(
+                    updatedCommand,
+                    onData,
+                );
+                end(result.exitCode === 0, result.cwd);
+            } catch (error) {
+                onError(error);
+            }
         })();
     }
 

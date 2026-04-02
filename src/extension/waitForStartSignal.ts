@@ -1,4 +1,5 @@
 import type { IPty } from "node-pty";
+import { START_SIGNAL_TIMEOUT_MS } from "./constants";
 import type { Logger } from "./logger";
 import { cleanAnsi } from "./util/ansiRegex";
 import { calculateSplitRegExp } from "./util/calculateSplitRegExp";
@@ -14,10 +15,11 @@ export function waitForStartSignal(
 
     const start = generateStart(token);
     const splitRegex = calculateSplitRegExp(prompt);
+    let timeout: NodeJS.Timeout;
     let started = false;
     let lastLine = "";
 
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
         const disposable = pty.onData((data) => {
             logger.debug(`data: ${JSON.stringify(data)}`);
 
@@ -33,8 +35,9 @@ export function waitForStartSignal(
 
                 if (started) {
                     if (cleanedLine === prompt) {
-                        logger.debug("Received start signal");
+                        globalThis.clearTimeout(timeout);
                         disposable.dispose();
+                        logger.debug("Received start signal and custom prompt");
                         resolve();
                     }
                 } else if (cleanedLine === start) {
@@ -53,5 +56,13 @@ export function waitForStartSignal(
         });
 
         pty.write(`echo ${start}\r`);
+
+        timeout = globalThis.setTimeout(() => {
+            disposable.dispose();
+            const waitingFor = started ? "custom prompt" : "start signal";
+            const message = `Timeout waiting for ${waitingFor}`;
+            logger.debug(message);
+            reject(new Error(message));
+        }, START_SIGNAL_TIMEOUT_MS);
     });
 }

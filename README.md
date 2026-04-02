@@ -49,7 +49,13 @@ Tries to set CWD in following order
 1. Workspace directory
 1. User home directory
 
-## Problem with Ubuntu/Debian
+## Problems
+
+### "Timeout waiting for custom prompt"
+
+BashBook sets `PS1` to detect when the shell is ready for the next command which signals end of cell execution. Prompt systems that override `PS1` from `.bashrc` or `PROMPT_COMMAND` can break execution. Common examples are `starship`, `ble.sh`, `bash-preexec`, custom `PROMPT_COMMAND` hooks, and similar prompt theming tools. If you see the error message `Cannot open resource with notebook editor` or if commands do not start or finish correctly, try disabling those prompt customizations for the BashBook shell session.
+
+### "Cannot open resource with notebook editor"
 
 On a Ubuntu/Debian system you may get a `Cannot open resource with notebook editor` error if vscode is installed as a flatpack(Ubuntu Software). For BashBook to work correctly vscode needs to be installed with [apt install](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
 
@@ -71,7 +77,7 @@ npm run package
 
 ### Dependencies
 
-Due to node-pty we have platform specific dependencies  
+Due to node-pty we have platform specific dependencies
 [node-pty dependencies](https://github.com/Microsoft/node-pty#dependencies)
 
 ### Components

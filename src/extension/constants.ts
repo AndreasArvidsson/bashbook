@@ -5,3 +5,4 @@ export const CONTROLLER_ID = "bashbook-controller";
 export const RENDERER_ID = "bashbook-renderer";
 export const NOTEBOOK_TYPE = "bashbook";
 export const NOTEBOOK_LABEL = "BashBook";
+export const START_SIGNAL_TIMEOUT_MS = 5000;
