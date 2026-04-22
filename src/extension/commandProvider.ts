@@ -19,7 +19,8 @@ async function createNewNotebook() {
 
 const openNotebookAsMarkdown = async (parser: CommandParser) => {
     const document = getActiveNotebookDocument();
-    if (!document) {
+
+    if (document == null) {
         return;
     }
 
@@ -28,7 +29,7 @@ const openNotebookAsMarkdown = async (parser: CommandParser) => {
         const output = getCellPlainTextOutput(cell);
         let content = "```bash\n";
         content += commands || "$";
-        if (output) {
+        if (output !== "") {
             content += `\n\n${output}`;
         }
         content += "\n```\n";

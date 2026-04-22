@@ -44,14 +44,11 @@ export class CommandParser {
 
     private nodeIsCode(node: Node): boolean {
         switch (node.type) {
-            case "command":
-            case "declaration_command":
-            case "list":
-            case "pipeline":
-            case "variable_assignment":
-                return true;
-            default:
+            case "comment":
+            case "ERROR":
                 return false;
+            default:
+                return node.text.trim().length > 0;
         }
     }
 }
