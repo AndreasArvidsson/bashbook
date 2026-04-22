@@ -23,7 +23,7 @@ interface RawNotebook {
 }
 
 class Serializer implements vscode.NotebookSerializer {
-    deserializeNotebook(content: Uint8Array): vscode.NotebookData {
+    public deserializeNotebook(content: Uint8Array): vscode.NotebookData {
         let raw: RawNotebook;
         try {
             // oxlint-disable-next-line typescript/no-unsafe-type-assertion
@@ -66,7 +66,7 @@ class Serializer implements vscode.NotebookSerializer {
         return notebook;
     }
 
-    serializeNotebook(data: vscode.NotebookData): Uint8Array {
+    public serializeNotebook(data: vscode.NotebookData): Uint8Array {
         const contents: RawNotebook = {
             metadata: data.metadata,
             cells: data.cells.map((cell) => ({

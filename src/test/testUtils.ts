@@ -6,7 +6,7 @@ export class FakePty {
     public disposed = false;
     private onDataCallback?: (data: string) => void;
 
-    onData(callback: (data: string) => void): { dispose: () => void } {
+    public onData(callback: (data: string) => void): { dispose: () => void } {
         this.onDataCallback = callback;
         return {
             dispose: () => {
@@ -16,11 +16,11 @@ export class FakePty {
         };
     }
 
-    write(data: string): void {
+    public write(data: string): void {
         this.writes.push(data);
     }
 
-    emit(data: string): void {
+    public emit(data: string): void {
         assert.ok(
             this.onDataCallback,
             "Expected onData callback to be registered",

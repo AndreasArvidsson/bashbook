@@ -4,16 +4,16 @@ import { toPosition } from "./treeSitter";
 import type { ParseTreeApi } from "./treeSitter";
 
 export class CommandParser {
-    constructor(private readonly parseTree: ParseTreeApi) {}
+    public constructor(private readonly parseTree: ParseTreeApi) {}
 
-    getCommandLines(document: vscode.TextDocument): string[] {
+    public getCommandLines(document: vscode.TextDocument): string[] {
         return this.parseTree
             .getTree(document)
             .rootNode.children.filter((n) => this.nodeIsCode(n))
             .map((node) => node.text);
     }
 
-    getCommandTextWithPrefix(document: vscode.TextDocument): string {
+    public getCommandTextWithPrefix(document: vscode.TextDocument): string {
         let result = "";
         let lastPos = new vscode.Position(0, 0);
         let lastCodePos = new vscode.Position(0, 0);

@@ -5,31 +5,31 @@ import { errorIsENOENT } from "../util/errorIsENOENT";
 import type { Profile } from "./Profile";
 
 export class ProfileCsh implements Profile {
-    getShell(): string {
+    public getShell(): string {
         return "csh";
     }
 
-    getPromtp1(prompt: string): string {
+    public getPromtp1(prompt: string): string {
         return `set prompt="${prompt}"`;
     }
 
-    getPrompt2(prompt: string): string {
+    public getPrompt2(prompt: string): string {
         return `set prompt2="${prompt}"`;
     }
 
-    getResultCommand(token: string): string {
+    public getResultCommand(token: string): string {
         return `echo "|${token}|exit:$status|cwd:\`pwd\`|"`;
     }
 
-    updateRootPath(rootPath: string): string {
+    public updateRootPath(rootPath: string): string {
         return rootPath;
     }
 
-    nodeToShellPath(shellPath: string): string {
+    public nodeToShellPath(shellPath: string): string {
         return shellPath;
     }
 
-    async readHistory(): Promise<string[]> {
+    public async readHistory(): Promise<string[]> {
         try {
             const historyFile = path.resolve(os.homedir(), ".history");
             const content = await fs.readFile(historyFile, "utf8");

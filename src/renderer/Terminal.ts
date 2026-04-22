@@ -13,7 +13,7 @@ export class Terminal extends xterm.Terminal {
     private dataContent = "";
     private onDataDisposable?: xterm.IDisposable;
 
-    constructor(options: TerminalOptions) {
+    public constructor(options: TerminalOptions) {
         super({ ...DEFAULT_OPTIONS, ...options });
 
         this.onSelectionChange(async () => {
@@ -24,7 +24,7 @@ export class Terminal extends xterm.Terminal {
         });
     }
 
-    write(data: string): void {
+    public write(data: string): void {
         if (this.options.disableStdin) {
             return;
         }
@@ -40,18 +40,18 @@ export class Terminal extends xterm.Terminal {
         }
     }
 
-    onInput(callback: (data: string) => void): void {
+    public onInput(callback: (data: string) => void): void {
         this.onDataDisposable = this.onData(callback);
     }
 
-    disableInput(): void {
+    public disableInput(): void {
         this.onDataDisposable?.dispose();
         this.options.disableStdin = true;
         // Hide cursor
         this.options.cursorStyle = "underline";
     }
 
-    calcTermCols(): number {
+    public calcTermCols(): number {
         if (this.element?.parentElement == null || this.cols === 0) {
             return 0;
         }

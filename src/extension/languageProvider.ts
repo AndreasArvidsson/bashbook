@@ -11,13 +11,13 @@ const selector: vscode.DocumentSelector = { language: LANGUAGE };
 export class BashCompletionItemProvider
     implements vscode.CompletionItemProvider
 {
-    static readonly triggerCharacters = ["/"];
+    public static readonly triggerCharacters = ["/"];
     private readonly history: vscode.CompletionItem[] = [];
     private readonly map = new Map<string, vscode.CompletionItem>();
     private nextIndex = Number.MAX_SAFE_INTEGER;
     private cwd = "/";
 
-    constructor(private readonly profile: Profile) {
+    public constructor(private readonly profile: Profile) {
         this.setCWD = this.setCWD.bind(this);
         this.historyPush = this.historyPush.bind(this);
 
@@ -29,13 +29,13 @@ export class BashCompletionItemProvider
         })();
     }
 
-    setCWD(cwd: string): void {
+    public setCWD(cwd: string): void {
         this.cwd = cwd.startsWith("~")
             ? tildeToPath(cwd)
             : this.profile.updateRootPath(cwd);
     }
 
-    historyPush(value: string): void {
+    public historyPush(value: string): void {
         if (!this.map.has(value)) {
             const item: vscode.CompletionItem = {
                 label: value,
@@ -48,7 +48,7 @@ export class BashCompletionItemProvider
         this.map.get(value)!.sortText = `${--this.nextIndex}`;
     }
 
-    provideCompletionItems(
+    public provideCompletionItems(
         document: vscode.TextDocument,
         position: vscode.Position,
     ): vscode.CompletionItem[] {
@@ -131,9 +131,9 @@ class CodeLensProvider implements vscode.CodeLensProvider {
     private cwd = "";
     private cwdPretty = "";
 
-    constructor(private readonly profile: Profile) {}
+    public constructor(private readonly profile: Profile) {}
 
-    register() {
+    public register(): void {
         this.dispose();
         this.disposable = vscode.languages.registerCodeLensProvider(
             selector,
@@ -141,11 +141,11 @@ class CodeLensProvider implements vscode.CodeLensProvider {
         );
     }
 
-    dispose() {
+    public dispose(): void {
         this.disposable?.dispose();
     }
 
-    setCWD(cwd: string) {
+    public setCWD(cwd: string): void {
         if (this.cwd !== cwd) {
             this.cwd = cwd;
             const { workspaceFolders } = vscode.workspace;
@@ -168,7 +168,7 @@ class CodeLensProvider implements vscode.CodeLensProvider {
         }
     }
 
-    provideCodeLenses(
+    public provideCodeLenses(
         document: vscode.TextDocument,
     ): vscode.ProviderResult<vscode.CodeLens[]> {
         if (vscode.window.activeTextEditor?.document !== document) {

@@ -5,31 +5,31 @@ import { errorIsENOENT } from "../util/errorIsENOENT";
 import type { Profile } from "./Profile";
 
 export class ProfileBash implements Profile {
-    getShell(): string {
+    public getShell(): string {
         return os.platform() === "win32" ? "bash.exe" : "bash";
     }
 
-    getPromtp1(prompt: string): string {
+    public getPromtp1(prompt: string): string {
         return `export PS1='${prompt}'`;
     }
 
-    getPrompt2(prompt: string): string {
+    public getPrompt2(prompt: string): string {
         return `export PS2='${prompt}'`;
     }
 
-    getResultCommand(token: string): string {
+    public getResultCommand(token: string): string {
         return `echo "|${token}|exit:$?|cwd:$(pwd)|"`;
     }
 
-    updateRootPath(rootPath: string): string {
+    public updateRootPath(rootPath: string): string {
         return rootPath;
     }
 
-    nodeToShellPath(shellPath: string): string {
+    public nodeToShellPath(shellPath: string): string {
         return shellPath;
     }
 
-    async readHistory(): Promise<string[]> {
+    public async readHistory(): Promise<string[]> {
         try {
             const historyFile = path.resolve(os.homedir(), ".bash_history");
             const content = await fs.readFile(historyFile, "utf8");

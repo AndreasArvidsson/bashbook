@@ -23,7 +23,7 @@ export class Notebook {
     private isExecuting?: CommandExecution;
     private nextExecutionOrder = 1;
 
-    constructor(
+    public constructor(
         private readonly graph: Graph,
         notebookUri: vscode.Uri,
     ) {
@@ -37,11 +37,11 @@ export class Notebook {
         this.pty = new Pty(shell, this.cwd, graph.profile);
     }
 
-    dispose(): void {
+    public dispose(): void {
         this.pty.dispose();
     }
 
-    async doExecution(
+    public async doExecution(
         execution: vscode.NotebookCellExecution,
         executionOptions: ExecutionOptions = {},
         resolve?: (value: string) => void,
@@ -235,13 +235,13 @@ export class Notebook {
         })();
     }
 
-    onData(cellUri: string, data: string): void {
+    public onData(cellUri: string, data: string): void {
         if (this.isExecuting?.cellUri === cellUri) {
             this.pty.write(data);
         }
     }
 
-    setCols(cols: number): void {
+    public setCols(cols: number): void {
         this.pty.setCols(cols);
     }
 }

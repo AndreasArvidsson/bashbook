@@ -2,13 +2,13 @@ import * as path from "node:path";
 import { ProfileBash } from "./ProfileBash";
 
 export class ProfileGitBash extends ProfileBash {
-    useConpty = false;
+    public useConpty = false;
 
-    getShell(): string {
+    public getShell(): string {
         return "C:/Program Files/Git/bin/bash.exe";
     }
 
-    nodeToShellPath(shellPathSource: string): string {
+    public nodeToShellPath(shellPathSource: string): string {
         let shellPath = shellPathSource;
         // c: => /c/
         if (/^[a-zA-Z]:/.test(shellPath)) {
@@ -17,7 +17,7 @@ export class ProfileGitBash extends ProfileBash {
         return shellPath.replace(/\\/, "/");
     }
 
-    updateRootPath(rootPath: string): string {
+    public updateRootPath(rootPath: string): string {
         // /c/ => c:
         if (/^\/[a-zA-Z]\//.test(rootPath)) {
             return `${rootPath[1]}:${rootPath.slice(2)}`;

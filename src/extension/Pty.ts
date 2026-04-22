@@ -18,7 +18,7 @@ export class Pty {
     private readonly pty: IPty;
     private ready?: Promise<void>;
 
-    constructor(
+    public constructor(
         shell: string,
         cwd: string,
         private readonly profile: Profile,
@@ -48,30 +48,30 @@ export class Pty {
         this.pty.write(`${profile.getPrompt2(PROMPT2)}\r`);
     }
 
-    dispose(): void {
+    public dispose(): void {
         this.pty.kill();
     }
 
-    getCols(): number {
+    public getCols(): number {
         return this.pty.cols;
     }
 
-    setCols(cols: number): void {
+    public setCols(cols: number): void {
         if (cols !== this.pty.cols) {
             this.pty.resize(cols, ROWS);
             this.pty.write("\r");
         }
     }
 
-    write(data: string): void {
+    public write(data: string): void {
         this.pty.write(data);
     }
 
-    terminate(): void {
+    public terminate(): void {
         this.pty.write(CTRL_C);
     }
 
-    async writeCommand(
+    public async writeCommand(
         command: string,
         onData: (data: string) => void,
     ): Promise<Result> {

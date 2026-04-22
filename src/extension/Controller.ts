@@ -12,7 +12,7 @@ export class Controller {
     private readonly controller: vscode.NotebookController;
     private readonly notebooks = new Map<string, Notebook>();
 
-    constructor(private readonly graph: Graph) {
+    public constructor(private readonly graph: Graph) {
         this.controller = vscode.notebooks.createNotebookController(
             CONTROLLER_ID,
             NOTEBOOK_TYPE,
@@ -23,7 +23,7 @@ export class Controller {
         this.controller.supportsExecutionOrder = true;
     }
 
-    dispose(): void {
+    public dispose(): void {
         this.controller.dispose();
         for (const notebook of this.notebooks.values()) {
             notebook.dispose();
@@ -31,7 +31,7 @@ export class Controller {
         this.notebooks.clear();
     }
 
-    onDidOpenNotebookDocument(document: vscode.NotebookDocument): void {
+    public onDidOpenNotebookDocument(document: vscode.NotebookDocument): void {
         if (
             document.notebookType === NOTEBOOK_TYPE &&
             !this.notebooks.has(document.uri.toString())
@@ -43,29 +43,29 @@ export class Controller {
         }
     }
 
-    onDidCloseNotebookDocument(document: vscode.NotebookDocument): void {
+    public onDidCloseNotebookDocument(document: vscode.NotebookDocument): void {
         if (document.notebookType === NOTEBOOK_TYPE) {
             this.notebooks.get(document.uri.toString())?.dispose();
             this.notebooks.delete(document.uri.toString());
         }
     }
 
-    syncNotebookDirectory(uri: vscode.Uri): void {
+    public syncNotebookDirectory(uri: vscode.Uri): void {
         const notebook = this.notebooks.get(uri.toString());
         if (notebook != null) {
             this.graph.setCWD(notebook.cwd);
         }
     }
 
-    onData(notebookUri: string, cellUri: string, data: string): void {
+    public onData(notebookUri: string, cellUri: string, data: string): void {
         this.notebooks.get(notebookUri)?.onData(cellUri, data);
     }
 
-    setCols(notebookUri: string, cols: number): void {
+    public setCols(notebookUri: string, cols: number): void {
         this.notebooks.get(notebookUri)?.setCols(cols);
     }
 
-    doExecution(
+    public doExecution(
         cell: vscode.NotebookCell,
         options: ExecutionOptions = {},
     ): Promise<string> {
